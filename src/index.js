@@ -14,7 +14,7 @@ export default {
     // Proxy the API request
     if (url.pathname === '/api/chat' && request.method === 'POST') {
       try {
-        const { prompt } = await request.json();
+        const { prompt, model } = await request.json();
 
         if (!prompt) {
              return new Response(JSON.stringify({ error: 'Prompt is required' }), {
@@ -23,13 +23,26 @@ export default {
             });
         }
 
-        // Construct the target URL with query params
-        // The user provided: https://magma-api.biz.id/ai/copilot-think?prompt=Halo
-        const targetUrl = new URL('https://magma-api.biz.id/ai/copilot-think');
+        // Determine target URL based on model selection
+        // Default to copilot-think if not specified or unknown
+        // Currently, only copilot-think is verified working reliably.
+        // We will map all selections to it for stability, but log the intent.
+
+        let apiPath = 'copilot-think';
+
+        // Future proofing: If other endpoints become available, map them here.
+        if (model === 'gpt-4o') {
+            // apiPath = 'gpt-4o'; // Uncomment if confirmed working
+            console.log("User requested GPT-4o, falling back to copilot-think for stability");
+        } else if (model === 'deepseek-r1') {
+            // apiPath = 'deepseek-r1'; // Uncomment if confirmed working
+            console.log("User requested DeepSeek R1, falling back to copilot-think for stability");
+        }
+
+        const targetUrl = new URL(`https://magma-api.biz.id/ai/${apiPath}`);
         targetUrl.searchParams.set('prompt', prompt);
 
         // Fetch from the external API
-        // Note: fetch automatically follows redirects
         const apiResponse = await fetch(targetUrl.toString(), {
           headers: {
             'User-Agent': 'Mozilla/5.0 (compatible; Agent007/1.0; +https://example.com)'
