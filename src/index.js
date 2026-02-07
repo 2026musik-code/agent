@@ -38,7 +38,7 @@ export default {
 
 async function handleChatProxy(request) {
     try {
-        const { prompt, model } = await request.json();
+        const { prompt, model, selectedRepo, githubToken } = await request.json();
 
         if (!prompt) {
              return new Response(JSON.stringify({ error: 'Prompt is required' }), {
@@ -47,13 +47,51 @@ async function handleChatProxy(request) {
             });
         }
 
+        // --- Context Injection ---
+        let finalPrompt = prompt;
+
+        if (selectedRepo && githubToken) {
+            try {
+                // Fetch repository structure (Tree)
+                // Limit to depth 2 or 3 to avoid massive context
+                // Use the 'default_branch' if available, otherwise 'main' or 'master'
+                const branch = selectedRepo.default_branch || 'main';
+                const treeUrl = `https://api.github.com/repos/${selectedRepo.full_name}/git/trees/${branch}?recursive=1`;
+
+                const treeRes = await fetch(treeUrl, {
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'User-Agent': 'Agent007-Worker'
+                    }
+                });
+
+                if (treeRes.ok) {
+                    const treeData = await treeRes.json();
+                    // Summarize tree: limit to 50 files to save context window
+                    const fileList = treeData.tree
+                        .filter(item => item.type === 'blob') // Only files
+                        .slice(0, 50)
+                        .map(item => `- ${item.path}`)
+                        .join('\n');
+
+                    const contextHeader = `[System: You are analyzing the GitHub repository '${selectedRepo.full_name}'.\nFile Structure (partial):\n${fileList}\n\nUse this context to answer the user's request.]\n\n`;
+                    finalPrompt = contextHeader + prompt;
+                } else {
+                    console.warn(`Failed to fetch repo tree: ${treeRes.status}`);
+                }
+            } catch (repoErr) {
+                console.error("Repo Context Error:", repoErr);
+                // Continue without context if fails
+            }
+        }
+
         // Default to copilot-think for stability
         let apiPath = 'copilot-think';
         if (model === 'gpt-4o') console.log("User requested GPT-4o, falling back to copilot-think");
         if (model === 'deepseek-r1') console.log("User requested DeepSeek R1, falling back to copilot-think");
 
         const targetUrl = new URL(`https://magma-api.biz.id/ai/${apiPath}`);
-        targetUrl.searchParams.set('prompt', prompt);
+        targetUrl.searchParams.set('prompt', finalPrompt);
 
         const apiResponse = await fetch(targetUrl.toString(), {
           headers: {
