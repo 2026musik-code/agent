@@ -6,6 +6,10 @@ compatibility_date = "2024-04-03"
 enabled = true
 head_sampling_rate = 1
 
+[[r2_buckets]]
+binding = "VPSAI"
+bucket_name = "vpsai"
+
 [[rules]]
 type = "Text"
 globs = ["**/*.html"]

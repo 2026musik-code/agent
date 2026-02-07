@@ -31,7 +31,7 @@
             font-family: 'Courier New', Courier, monospace;
             background-color: var(--bg-color);
             color: var(--text-color);
-            height: 100dvh; /* Use dynamic viewport height for mobile */
+            height: 100dvh;
             width: 100vw;
             overflow: hidden;
         }
@@ -46,7 +46,7 @@
         }
 
         header {
-            flex-shrink: 0; /* Prevent header from shrinking */
+            flex-shrink: 0;
             height: var(--header-height);
             display: flex;
             align-items: center;
@@ -91,22 +91,16 @@
             font-size: 0.9rem;
             outline: none;
             cursor: pointer;
-            appearance: none; /* Hide default arrow */
+            appearance: none;
             -webkit-appearance: none;
             text-align: right;
             text-align-last: center;
             width: 150px;
-            /* Custom dropdown arrow */
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d4af37%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
             background-repeat: no-repeat;
             background-position: right 10px center;
             background-size: 10px;
             padding-right: 30px;
-        }
-
-        .model-select:focus {
-            border-color: var(--accent-gold);
-            box-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
         }
 
         /* Sidebar */
@@ -123,6 +117,8 @@
             transition: transform 0.3s ease-in-out;
             z-index: 90;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar.open {
@@ -155,6 +151,7 @@
             letter-spacing: 1px;
             border-bottom: 1px solid #333;
             padding-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .new-chat-btn {
@@ -172,6 +169,8 @@
             gap: 10px;
             border-radius: 5px;
             transition: all 0.2s;
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
         .new-chat-btn:hover {
@@ -186,6 +185,61 @@
             font-weight: bold;
         }
 
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+
+        .history-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-gold);
+        }
+
+        .history-item.active {
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--accent-gold);
+            border-left: 2px solid var(--accent-gold);
+        }
+
+        .history-item-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1rem;
+            opacity: 0.6;
+            transition: opacity 0.2s, color 0.2s;
+        }
+
+        .delete-btn:hover {
+            opacity: 1;
+            color: #ff4444;
+        }
+
         h1 {
             color: var(--accent-gold);
             font-size: 1.2rem;
@@ -197,7 +251,7 @@
 
         .chat-window {
             flex: 1;
-            padding: 20px 10px; /* Reduced side padding to bring bubbles closer to edge */
+            padding: 20px 10px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -207,7 +261,7 @@
         }
 
         .message {
-            max-width: 90%; /* Increased width for tighter look */
+            max-width: 90%;
             padding: 15px;
             border-radius: 8px;
             line-height: 1.6;
@@ -218,11 +272,11 @@
 
         @media (max-width: 600px) {
             .message {
-                max-width: 95%; /* Keep max width on mobile */
+                max-width: 95%;
                 padding: 12px;
             }
             .chat-window {
-                padding: 20px 5px; /* Even tighter on mobile */
+                padding: 20px 5px;
             }
             h1 {
                 font-size: 1rem;
@@ -232,7 +286,8 @@
                 font-size: 0.8rem;
             }
             .sidebar {
-                width: 80%;
+                width: 70%; /* Reduced width */
+                max-width: 280px; /* Cap width */
             }
         }
 
@@ -263,7 +318,6 @@
             color: var(--accent-gold);
         }
 
-        /* Code Block Styling */
         .code-wrapper {
             position: relative;
             margin: 10px 0;
@@ -310,7 +364,7 @@
         }
 
         .input-area {
-            flex-shrink: 0; /* Prevent input area from shrinking */
+            flex-shrink: 0;
             padding: 15px;
             background: rgba(0, 0, 0, 0.9);
             border-top: 1px solid var(--accent-gold);
@@ -318,9 +372,8 @@
             gap: 10px;
             align-items: center;
             z-index: 10;
-            /* Ensure it stays at bottom on all devices */
             position: relative;
-            padding-bottom: max(15px, env(safe-area-inset-bottom)); /* iOS safe area */
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
         }
 
         input[type="text"] {
@@ -416,6 +469,9 @@
     <div class="sidebar" id="sidebar">
         <h2>Operations</h2>
         <button class="new-chat-btn" id="new-chat-btn">New Chat</button>
+        <div id="history-list" class="history-list">
+            <!-- History items will be injected here -->
+        </div>
     </div>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
@@ -439,15 +495,27 @@
 </div>
 
 <script>
+    // --- State Management ---
+    const userId = localStorage.getItem('agent007_user_id') || `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('agent007_user_id', userId);
+
+    let currentChatId = null;
+    let currentMessages = []; // { role: 'user'|'ai', content: string }
+    let chatHistory = [];
+
     // --- Sidebar Logic ---
     const menuBtn = document.getElementById('menu-btn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     const newChatBtn = document.getElementById('new-chat-btn');
+    const historyListEl = document.getElementById('history-list');
 
     function toggleSidebar() {
         sidebar.classList.toggle('open');
         overlay.classList.toggle('active');
+        if (sidebar.classList.contains('open')) {
+            loadHistoryList(); // Refresh list on open
+        }
     }
 
     function closeSidebar() {
@@ -458,18 +526,120 @@
     menuBtn.addEventListener('click', toggleSidebar);
     overlay.addEventListener('click', closeSidebar);
 
-    // --- New Chat Logic ---
-    newChatBtn.addEventListener('click', () => {
-        // Clear chat
+    // --- History Logic ---
+
+    async function loadHistoryList() {
+        try {
+            const res = await fetch(`/api/history?userId=${userId}`);
+            if (res.ok) {
+                chatHistory = await res.json();
+                renderSidebar();
+            }
+        } catch (e) {
+            console.error("Failed to load history:", e);
+        }
+    }
+
+    function renderSidebar() {
+        historyListEl.innerHTML = '';
+        if (chatHistory.length === 0) {
+            historyListEl.innerHTML = '<div style="padding:10px; color:#666; font-size:0.8rem;">No previous operations.</div>';
+            return;
+        }
+
+        chatHistory.forEach(chat => {
+            const item = document.createElement('div');
+            item.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'history-item-title';
+            titleSpan.textContent = chat.title || 'Untitled Operation';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            `;
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteChat(chat.id);
+            };
+
+            item.appendChild(titleSpan);
+            item.appendChild(deleteBtn);
+
+            item.onclick = () => loadChat(chat.id);
+
+            historyListEl.appendChild(item);
+        });
+    }
+
+    async function deleteChat(chatId) {
+        if (!confirm('Are you sure you want to delete this operation record?')) return;
+
+        try {
+            const res = await fetch(`/api/history/${chatId}?userId=${userId}`, { method: 'DELETE' });
+            if (res.ok) {
+                if (currentChatId === chatId) {
+                    resetChat(); // Clear view if we deleted the current chat
+                }
+                loadHistoryList(); // Refresh list
+            }
+        } catch (e) {
+            console.error("Failed to delete chat:", e);
+        }
+    }
+
+    async function loadChat(chatId) {
+        try {
+            const res = await fetch(`/api/history/${chatId}?userId=${userId}`);
+            if (res.ok) {
+                const data = await res.json();
+                currentChatId = chatId;
+                currentMessages = data.messages || [];
+
+                // Reconstruct Chat Window
+                const chatWindow = document.getElementById('chat-window');
+                chatWindow.innerHTML = '';
+
+                // Add default welcome if empty (shouldn't happen usually)
+                if (currentMessages.length === 0) {
+                     chatWindow.innerHTML = `
+                        <div class="message ai-message">
+                            Welcome, Agent. How may I assist you today?
+                        </div>
+                    `;
+                } else {
+                    currentMessages.forEach(msg => {
+                        addMessageToUI(msg.content, msg.role === 'user');
+                    });
+                }
+
+                closeSidebar();
+            }
+        } catch (e) {
+            console.error("Failed to load chat:", e);
+        }
+    }
+
+    function resetChat() {
+        currentChatId = null;
+        currentMessages = [];
         const chatWindow = document.getElementById('chat-window');
         chatWindow.innerHTML = `
             <div class="message ai-message">
                 Welcome, Agent. How may I assist you today?
             </div>
         `;
-        closeSidebar();
-        // Reset input focus
         document.getElementById('user-input').focus();
+    }
+
+    newChatBtn.addEventListener('click', () => {
+        resetChat();
+        closeSidebar();
     });
 
     // --- Markdown & Highlight Configuration ---
@@ -520,7 +690,7 @@
     const typingIndicator = document.getElementById('typing-indicator');
     const modelSelect = document.getElementById('model-select');
 
-    function addMessage(content, isUser = false) {
+    function addMessageToUI(content, isUser = false) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
 
@@ -532,6 +702,31 @@
 
         chatWindow.appendChild(msgDiv);
         chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function saveCurrentChat() {
+        if (currentMessages.length === 0) return;
+
+        if (!currentChatId) {
+            currentChatId = Date.now().toString();
+        }
+
+        // Generate title from first message
+        const firstMsg = currentMessages.find(m => m.role === 'user');
+        const title = firstMsg ? (firstMsg.content.substring(0, 30) + (firstMsg.content.length > 30 ? '...' : '')) : 'New Operation';
+
+        try {
+            await fetch(`/api/history/${currentChatId}?userId=${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: currentMessages,
+                    title: title
+                })
+            });
+        } catch (e) {
+            console.error("Failed to save chat:", e);
+        }
     }
 
     window.copyCode = function(btn) {
@@ -558,7 +753,10 @@
 
         const selectedModel = modelSelect.value;
 
-        addMessage(message, true);
+        // Add to UI and State
+        addMessageToUI(message, true);
+        currentMessages.push({ role: 'user', content: message });
+
         userInput.value = '';
         userInput.disabled = true;
         sendBtn.disabled = true;
@@ -578,15 +776,23 @@
 
             const data = await response.json();
 
+            let aiResponseText = "";
             if (data.status && data.result && data.result.response) {
-                addMessage(data.result.response, false);
+                aiResponseText = data.result.response;
             } else {
-                addMessage("Error: Mission Failed. Unable to retrieve intelligence.", false);
+                aiResponseText = "Error: Mission Failed. Unable to retrieve intelligence.";
                 console.error("API Error:", data);
             }
 
+            // Add to UI and State
+            addMessageToUI(aiResponseText, false);
+            currentMessages.push({ role: 'ai', content: aiResponseText });
+
+            // Save Chat
+            await saveCurrentChat();
+
         } catch (error) {
-            addMessage("Communication Error: Signal Lost.", false);
+            addMessageToUI("Communication Error: Signal Lost.", false);
             console.error("Network Error:", error);
         } finally {
             userInput.disabled = false;
@@ -596,6 +802,9 @@
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
     });
+
+    // Initial Load
+    loadHistoryList();
 </script>
 
 </body>
