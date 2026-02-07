@@ -401,10 +401,13 @@
             align-self: flex-start;
             background: var(--ai-msg-gradient);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            color: #e0e0e0;
+            color: #d4af37;
             width: 100%;
             max-width: 90%;
             border-radius: 12px;
+            line-height: 1.6;
+            letter-spacing: 0.02em;
+            text-align: left;
         }
 
         /* Premium Typography for AI */
@@ -697,6 +700,7 @@
 
             <select class="model-select" id="model-select" aria-label="Select AI Model">
                 <option value="copilot-think" selected>Copilot (Think)</option>
+                <option value="nano-banana">Nano Banana (Image)</option>
                 <option value="gpt-4o">GPT-4o</option>
                 <option value="deepseek-r1">DeepSeek R1</option>
             </select>

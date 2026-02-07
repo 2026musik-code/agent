@@ -47,6 +47,41 @@ async function handleChatProxy(request) {
             });
         }
 
+        // --- Nano Banana (Image Gen) ---
+        if (model === 'nano-banana') {
+            try {
+                const targetUrl = new URL('https://magma-api.biz.id/edits/generate');
+                targetUrl.searchParams.set('prompt', prompt);
+
+                const apiResponse = await fetch(targetUrl.toString(), {
+                    headers: { 'User-Agent': 'Agent007-Worker' }
+                });
+
+                if (!apiResponse.ok) {
+                    throw new Error(`Image API responded with status ${apiResponse.status}`);
+                }
+
+                const data = await apiResponse.json();
+
+                if (data.status && data.result && data.result.image) {
+                     return new Response(JSON.stringify({
+                         status: true,
+                         result: {
+                             response: `### 🍌 Nano Banana Image\n\n![Generated Image](${data.result.image})`
+                         }
+                     }), { headers: { 'Content-Type': 'application/json' } });
+                } else {
+                    throw new Error('Invalid response structure from Image API');
+                }
+            } catch (imgErr) {
+                console.error("Nano Banana Error:", imgErr);
+                return new Response(JSON.stringify({
+                    status: false,
+                    result: { response: `⚠️ **Image Generation Failed**\n\nError: ${imgErr.message}` }
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
+        }
+
         // --- Context Injection ---
         let finalPrompt = prompt;
 
