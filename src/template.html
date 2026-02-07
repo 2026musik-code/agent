@@ -2,19 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AGENT 007 - Intelligent Assistant</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
         :root {
             --bg-color: #0a0a0a;
             --text-color: #e0e0e0;
             --accent-gold: #d4af37;
             --accent-gold-dim: #a68b2c;
-            --glass-bg: rgba(20, 20, 20, 0.8);
+            --glass-bg: rgba(20, 20, 20, 0.9); /* Slightly darker for full screen feel */
             --user-msg-bg: #1a1a1a;
             --ai-msg-bg: #0f0f0f;
             --border-color: #333;
+            --header-height: 60px;
+            --input-height: 70px;
         }
 
         * {
@@ -27,41 +31,38 @@
             font-family: 'Courier New', Courier, monospace; /* Agent/Hacker vibe */
             background-color: var(--bg-color);
             color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
-            overflow: hidden;
+            width: 100vw;
+            overflow: hidden; /* Prevent body scroll, container handles it */
         }
 
         .container {
             width: 100%;
-            max-width: 800px;
-            height: 90vh;
+            height: 100%;
             background: var(--glass-bg);
-            border: 1px solid var(--accent-gold);
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(10px);
             position: relative;
         }
 
         header {
-            padding: 20px;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-bottom: 1px solid var(--accent-gold);
-            text-align: center;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px 10px 0 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10;
         }
 
         h1 {
             color: var(--accent-gold);
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             letter-spacing: 2px;
             text-transform: uppercase;
             text-shadow: 0 0 10px var(--accent-gold-dim);
+            margin: 0;
         }
 
         .chat-window {
@@ -72,15 +73,28 @@
             flex-direction: column;
             gap: 15px;
             scroll-behavior: smooth;
+            padding-bottom: 20px; /* Extra padding at bottom */
         }
 
         .message {
-            max-width: 80%;
+            max-width: 85%;
             padding: 15px;
             border-radius: 8px;
-            line-height: 1.5;
+            line-height: 1.6;
             position: relative;
             animation: fadeIn 0.3s ease;
+            word-wrap: break-word;
+        }
+
+        /* Mobile optimization */
+        @media (max-width: 600px) {
+            .message {
+                max-width: 95%;
+                padding: 12px;
+            }
+            h1 {
+                font-size: 1rem;
+            }
         }
 
         @keyframes fadeIn {
@@ -102,19 +116,77 @@
             border: 1px solid var(--border-color);
             color: var(--text-color);
             border-left: 3px solid var(--accent-gold);
+            width: 100%; /* Allow code blocks to expand */
+            max-width: 90%; /* But constrain width slightly */
         }
 
         .ai-message strong {
             color: var(--accent-gold);
         }
 
+        /* Code Block Styling */
+        .code-wrapper {
+            position: relative;
+            margin: 10px 0;
+            background: #1e1e1e;
+            border-radius: 6px;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+
+        pre {
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', 'Andale Mono', monospace;
+            font-size: 0.9em;
+            display: block;
+            padding: 15px;
+            color: #d4d4d4; /* Default if HLJS fails */
+        }
+
+        /* Inline code styling */
+        p code, li code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #e0e0e0;
+            display: inline;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--accent-gold);
+            border: 1px solid var(--accent-gold-dim);
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 5;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-gold);
+            color: #000;
+            opacity: 1;
+        }
+
         .input-area {
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.9);
             border-top: 1px solid var(--accent-gold);
             display: flex;
             gap: 10px;
-            border-radius: 0 0 10px 10px;
+            align-items: center;
+            z-index: 10;
         }
 
         input[type="text"] {
@@ -127,53 +199,63 @@
             font-family: inherit;
             outline: none;
             transition: box-shadow 0.3s;
+            font-size: 1rem; /* Prevent zoom on mobile */
         }
 
         input[type="text"]:focus {
             box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+            border-color: var(--accent-gold);
         }
 
-        button {
+        button#send-btn {
             background: var(--accent-gold);
             color: #000;
             border: none;
-            padding: 12px 25px;
+            padding: 12px 20px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
             font-family: inherit;
             text-transform: uppercase;
             transition: background 0.3s, transform 0.1s;
+            white-space: nowrap;
         }
 
-        button:hover {
+        button#send-btn:hover {
             background: #f0c445;
         }
 
-        button:active {
+        button#send-btn:active {
             transform: scale(0.98);
         }
 
-        button:disabled {
+        button#send-btn:disabled {
             background: #555;
             cursor: not-allowed;
+            transform: none;
         }
 
         .typing-indicator {
             display: none;
             color: var(--accent-gold-dim);
             font-size: 0.8rem;
-            margin-top: 5px;
-            align-self: flex-start;
-            margin-left: 10px;
+            padding: 0 20px 10px 20px; /* Place it above input area visually if needed, but here it's flexed */
+            position: absolute;
+            bottom: 70px; /* Above input area */
+            left: 0;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            pointer-events: none;
         }
 
         /* Scrollbar styling */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #000;
+            background: #0a0a0a;
         }
         ::-webkit-scrollbar-thumb {
             background: var(--accent-gold-dim);
@@ -187,12 +269,15 @@
     <header>
         <h1>Agent 007</h1>
     </header>
+
     <div class="chat-window" id="chat-window">
         <div class="message ai-message">
             Welcome, Agent. How may I assist you today?
         </div>
     </div>
+
     <div class="typing-indicator" id="typing-indicator">Agent is thinking...</div>
+
     <form class="input-area" id="chat-form">
         <input type="text" id="user-input" placeholder="Type your command..." autocomplete="off" required>
         <button type="submit" id="send-btn">Send</button>
@@ -200,6 +285,52 @@
 </div>
 
 <script>
+    // --- Markdown & Highlight Configuration ---
+
+    // Custom renderer for code blocks to add Copy button
+    const renderer = new marked.Renderer();
+
+    renderer.code = (token) => {
+        // In newer marked versions, the first argument might be an object containing text and lang
+        let codeStr = token;
+        let language = '';
+
+        if (typeof token === 'object' && token !== null) {
+            codeStr = token.text || '';
+            language = token.lang || '';
+        } else if (arguments.length > 1) {
+            // Fallback for older signatures (code, lang, escaped)
+            codeStr = token;
+            language = arguments[1];
+        }
+
+        codeStr = String(codeStr);
+
+        // Check if language is valid for highlighting
+        const validLang = !!(language && hljs.getLanguage(language));
+
+        let highlighted;
+        try {
+            highlighted = validLang
+                ? hljs.highlight(codeStr, { language }).value
+                : hljs.highlightAuto(codeStr).value;
+        } catch (e) {
+            console.error("Highlighting failed:", e);
+            highlighted = codeStr; // Fallback
+        }
+
+        return `
+            <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code class="hljs ${language || ''}">${highlighted}</code></pre>
+            </div>
+        `;
+    };
+
+    marked.use({ renderer });
+
+    // --- Chat Logic ---
+
     const chatWindow = document.getElementById('chat-window');
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
@@ -220,6 +351,24 @@
         chatWindow.appendChild(msgDiv);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
+
+    // Copy function
+    window.copyCode = function(btn) {
+        const wrapper = btn.closest('.code-wrapper');
+        const codeBlock = wrapper.querySelector('code');
+        const text = codeBlock.innerText; // Get raw text
+
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            btn.textContent = 'Error';
+        });
+    };
 
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -259,6 +408,8 @@
             sendBtn.disabled = false;
             typingIndicator.style.display = 'none';
             userInput.focus();
+            // Scroll to bottom again after UI update
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
     });
 </script>
