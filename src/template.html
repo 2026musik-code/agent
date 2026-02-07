@@ -31,7 +31,7 @@
             font-family: 'Courier New', Courier, monospace;
             background-color: var(--bg-color);
             color: var(--text-color);
-            height: 100vh;
+            height: 100dvh; /* Use dynamic viewport height for mobile */
             width: 100vw;
             overflow: hidden;
         }
@@ -46,6 +46,7 @@
         }
 
         header {
+            flex-shrink: 0; /* Prevent header from shrinking */
             height: var(--header-height);
             display: flex;
             align-items: center;
@@ -306,6 +307,7 @@
         }
 
         .input-area {
+            flex-shrink: 0; /* Prevent input area from shrinking */
             padding: 15px;
             background: rgba(0, 0, 0, 0.9);
             border-top: 1px solid var(--accent-gold);
@@ -313,6 +315,9 @@
             gap: 10px;
             align-items: center;
             z-index: 10;
+            /* Ensure it stays at bottom on all devices */
+            position: relative;
+            padding-bottom: max(15px, env(safe-area-inset-bottom)); /* iOS safe area */
         }
 
         input[type="text"] {
