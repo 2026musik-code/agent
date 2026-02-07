@@ -80,6 +80,42 @@
             transition: transform 0.3s;
         }
 
+        /* Header Controls */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* GitHub Button & Avatar */
+        .github-btn {
+            background: transparent;
+            border: 1px solid var(--accent-gold-dim);
+            color: var(--accent-gold);
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .github-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--accent-gold);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-gold);
+            cursor: pointer;
+            object-fit: cover;
+        }
+
         /* Model Selector */
         .model-select {
             background: rgba(0, 0, 0, 0.5);
@@ -289,6 +325,10 @@
                 width: 70%;
                 max-width: 280px;
             }
+            /* Hide 'GitHub' text on mobile, keep icon */
+            .github-btn span {
+                display: none;
+            }
         }
 
         @keyframes fadeIn {
@@ -366,7 +406,7 @@
         .preview-btn {
             position: absolute;
             top: 5px;
-            right: 60px; /* Positioned to the left of Copy */
+            right: 60px;
             background: rgba(0, 255, 204, 0.2);
             color: #00ffcc;
             border: 1px solid #00aa88;
@@ -523,7 +563,108 @@
             width: 100%;
             height: 100%;
             border: none;
-            background: white; /* Default to white for web previews */
+            background: white;
+        }
+
+        /* Login Modal */
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-content {
+            background: #111;
+            border: 1px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
+        }
+
+        .login-content h3 {
+            color: var(--accent-gold);
+            text-align: center;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .login-field label {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .login-field input {
+            background: #222;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 10px;
+            border-radius: 4px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .login-field input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        .login-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .login-btn-save {
+            flex: 1;
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .login-btn-cancel {
+            flex: 1;
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .login-note {
+            font-size: 0.75rem;
+            color: #666;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .login-note a {
+            color: var(--accent-gold-dim);
+            text-decoration: none;
         }
 
         ::-webkit-scrollbar {
@@ -549,11 +690,21 @@
             <span></span>
         </button>
         <h1>Agent 007</h1>
-        <select class="model-select" id="model-select" aria-label="Select AI Model">
-            <option value="copilot-think" selected>Copilot (Think)</option>
-            <option value="gpt-4o">GPT-4o</option>
-            <option value="deepseek-r1">DeepSeek R1</option>
-        </select>
+        <div class="header-controls">
+            <button class="github-btn" id="github-btn" onclick="openLoginModal()">
+                <svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+                <span>GitHub</span>
+            </button>
+            <img id="user-avatar" class="user-avatar" style="display: none;" onclick="logoutGitHub()" alt="User Avatar">
+
+            <select class="model-select" id="model-select" aria-label="Select AI Model">
+                <option value="copilot-think" selected>Copilot (Think)</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="deepseek-r1">DeepSeek R1</option>
+            </select>
+        </div>
     </header>
 
     <div class="sidebar" id="sidebar">
@@ -595,6 +746,29 @@
     </div>
 </div>
 
+<!-- Login Modal -->
+<div class="login-modal" id="login-modal">
+    <div class="login-content">
+        <h3>GitHub Access</h3>
+        <div class="login-field">
+            <label>GitHub Username</label>
+            <input type="text" id="gh-username" placeholder="e.g. jamesbond007">
+        </div>
+        <div class="login-field">
+            <label>Personal Access Token (PAT)</label>
+            <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
+        </div>
+        <div class="login-note">
+            Required scopes: <code>repo</code> or <code>public_repo</code>.<br>
+            <a href="https://github.com/settings/tokens" target="_blank">Generate Token Here</a>
+        </div>
+        <div class="login-actions">
+            <button class="login-btn-cancel" onclick="closeLoginModal()">Cancel</button>
+            <button class="login-btn-save" onclick="saveGitHubCredentials()">Authenticate</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // --- State Management ---
     const userId = localStorage.getItem('agent007_user_id') || `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -603,6 +777,80 @@
     let currentChatId = null;
     let currentMessages = []; // { role: 'user'|'ai', content: string }
     let chatHistory = [];
+
+    // --- GitHub Login Logic ---
+    const loginModal = document.getElementById('login-modal');
+    const githubBtn = document.getElementById('github-btn');
+    const userAvatar = document.getElementById('user-avatar');
+
+    function openLoginModal() {
+        loginModal.style.display = 'flex';
+        document.getElementById('gh-username').value = localStorage.getItem('gh_username') || '';
+        document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
+    }
+
+    function closeLoginModal() {
+        loginModal.style.display = 'none';
+    }
+
+    async function saveGitHubCredentials() {
+        const username = document.getElementById('gh-username').value.trim();
+        const token = document.getElementById('gh-token').value.trim();
+
+        if (!username || !token) {
+            alert("Username and Token are required.");
+            return;
+        }
+
+        localStorage.setItem('gh_username', username);
+        localStorage.setItem('gh_token', token);
+
+        await checkGitHubLogin();
+        closeLoginModal();
+    }
+
+    async function checkGitHubLogin() {
+        const username = localStorage.getItem('gh_username');
+        const token = localStorage.getItem('gh_token');
+
+        if (username && token) {
+            try {
+                // Verify token and get avatar
+                const response = await fetch('https://api.github.com/user', {
+                    headers: {
+                        'Authorization': `token ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    githubBtn.style.display = 'none';
+                    userAvatar.src = data.avatar_url;
+                    userAvatar.style.display = 'block';
+                    userAvatar.title = `Logged in as ${data.login}`;
+                } else {
+                    console.error("GitHub Auth Failed");
+                    logoutGitHub(); // Clear invalid creds
+                }
+            } catch (e) {
+                console.error("GitHub Auth Error:", e);
+            }
+        }
+    }
+
+    window.logoutGitHub = function() {
+        if (confirm('Disconnect GitHub account?')) {
+            localStorage.removeItem('gh_username');
+            localStorage.removeItem('gh_token');
+            userAvatar.style.display = 'none';
+            githubBtn.style.display = 'flex';
+        }
+    };
+
+    // Close login modal on outside click
+    loginModal.addEventListener('click', (e) => {
+        if (e.target === loginModal) closeLoginModal();
+    });
 
     // --- Sidebar Logic ---
     const menuBtn = document.getElementById('menu-btn');
@@ -772,7 +1020,6 @@
             highlighted = codeStr;
         }
 
-        // Check if language implies HTML/Web content
         const isHtml = language === 'html' || language === 'xml';
         const previewBtn = isHtml ? `<button class="preview-btn" onclick="previewCode(this)">Preview</button>` : '';
 
@@ -805,7 +1052,6 @@
         previewFrame.srcdoc = ''; // Clear content
     };
 
-    // Close on background click
     previewModal.addEventListener('click', (e) => {
         if (e.target === previewModal) closePreview();
     });
@@ -840,7 +1086,6 @@
             currentChatId = Date.now().toString();
         }
 
-        // Generate title from first message
         const firstMsg = currentMessages.find(m => m.role === 'user');
         const title = firstMsg ? (firstMsg.content.substring(0, 30) + (firstMsg.content.length > 30 ? '...' : '')) : 'New Operation';
 
@@ -933,6 +1178,7 @@
     });
 
     // Initial Load
+    checkGitHubLogin(); // Check for existing token
     loadHistoryList();
 </script>
 
