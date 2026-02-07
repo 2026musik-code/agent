@@ -197,7 +197,7 @@
 
         .chat-window {
             flex: 1;
-            padding: 20px;
+            padding: 20px 10px; /* Reduced side padding to bring bubbles closer to edge */
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -207,7 +207,7 @@
         }
 
         .message {
-            max-width: 85%;
+            max-width: 90%; /* Increased width for tighter look */
             padding: 15px;
             border-radius: 8px;
             line-height: 1.6;
@@ -218,8 +218,11 @@
 
         @media (max-width: 600px) {
             .message {
-                max-width: 95%;
+                max-width: 95%; /* Keep max width on mobile */
                 padding: 12px;
+            }
+            .chat-window {
+                padding: 20px 5px; /* Even tighter on mobile */
             }
             h1 {
                 font-size: 1rem;
@@ -342,14 +345,14 @@
             background: var(--accent-gold);
             color: #000;
             border: none;
-            padding: 12px 20px;
+            padding: 12px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
-            font-family: inherit;
-            text-transform: uppercase;
             transition: background 0.3s, transform 0.1s;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         button#send-btn:hover {
@@ -426,7 +429,12 @@
 
     <form class="input-area" id="chat-form">
         <input type="text" id="user-input" placeholder="Type your command..." autocomplete="off" required>
-        <button type="submit" id="send-btn">Send</button>
+        <button type="submit" id="send-btn" aria-label="Send">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </button>
     </form>
 </div>
 
