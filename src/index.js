@@ -13,21 +13,23 @@ export default {
 
     // --- API: Chat Proxy ---
     if (url.pathname === '/api/chat' && request.method === 'POST') {
-      return handleChatProxy(request);
+      return handleChatProxy(request, env);
     }
 
     // --- API: History Management (R2) ---
-    // Routes:
-    // GET /api/history?userId=...       -> List chats
-    // GET /api/history/:id?userId=...   -> Get chat content
-    // POST /api/history/:id?userId=...  -> Save chat content & update manifest
-    // DELETE /api/history/:id?userId=...-> Delete chat & update manifest
-
     if (url.pathname.startsWith('/api/history')) {
         if (!env.VPSAI) {
             return new Response(JSON.stringify({ error: 'Storage not configured' }), { status: 503 });
         }
         return handleHistory(request, env, url);
+    }
+
+    // --- API: Serve Image ---
+    if (url.pathname.startsWith('/api/image/')) {
+        if (!env.VPSAI) {
+            return new Response(JSON.stringify({ error: 'Storage not configured' }), { status: 503 });
+        }
+        return handleServeImage(request, env, url);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -36,9 +38,11 @@ export default {
 
 // --- Helper Functions ---
 
-async function handleChatProxy(request) {
+async function handleChatProxy(request, env) {
     try {
-        const { prompt, model, selectedRepo, githubToken } = await request.json();
+        const { prompt, model, selectedRepo, githubToken, image } = await request.json();
+        const requestUrl = new URL(request.url);
+        const origin = requestUrl.origin;
 
         if (!prompt) {
              return new Response(JSON.stringify({ error: 'Prompt is required' }), {
@@ -52,6 +56,40 @@ async function handleChatProxy(request) {
              try {
                 const targetUrl = new URL('https://magma-api.biz.id/ai/gptnano');
                 targetUrl.searchParams.set('prompt', prompt);
+
+                // Handle Image Upload if present
+                if (image) {
+                    try {
+                        // Expecting 'image' to be base64 string (data:image/png;base64,...)
+                        const parts = image.split(',');
+                        if (parts.length === 2) {
+                            const mimeMatch = parts[0].match(/:(.*?);/);
+                            const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+                            const base64Data = parts[1];
+                            const buffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+
+                            // Generate ID
+                            const imageId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                            const extension = mimeType.split('/')[1] || 'png';
+                            const key = `uploads/${imageId}.${extension}`;
+
+                            // Save to R2
+                            if (env.VPSAI) {
+                                await env.VPSAI.put(key, buffer, {
+                                    httpMetadata: { contentType: mimeType }
+                                });
+
+                                // Generate URL
+                                const imageUrl = `${origin}/api/image/${key}`;
+                                targetUrl.searchParams.set('url', imageUrl);
+                            }
+                        }
+                    } catch (uploadErr) {
+                        console.error("Image Upload Error:", uploadErr);
+                        // Proceed without image url if upload fails, or fail?
+                        // Better to proceed so user sees error from API or at least chat continues
+                    }
+                }
 
                 const apiResponse = await fetch(targetUrl.toString(), {
                     headers: { 'User-Agent': 'Agent007-Worker' }
@@ -116,9 +154,6 @@ async function handleChatProxy(request) {
 
         if (selectedRepo && githubToken) {
             try {
-                // Fetch repository structure (Tree)
-                // Limit to depth 2 or 3 to avoid massive context
-                // Use the 'default_branch' if available, otherwise 'main' or 'master'
                 const branch = selectedRepo.default_branch || 'main';
                 const treeUrl = `https://api.github.com/repos/${selectedRepo.full_name}/git/trees/${branch}?recursive=1`;
 
@@ -131,25 +166,20 @@ async function handleChatProxy(request) {
 
                 if (treeRes.ok) {
                     const treeData = await treeRes.json();
-                    // Summarize tree: limit to 50 files to save context window
                     const fileList = treeData.tree
-                        .filter(item => item.type === 'blob') // Only files
+                        .filter(item => item.type === 'blob')
                         .slice(0, 50)
                         .map(item => `- ${item.path}`)
                         .join('\n');
 
                     const contextHeader = `[System: You are analyzing the GitHub repository '${selectedRepo.full_name}'.\nFile Structure (partial):\n${fileList}\n\nUse this context to answer the user's request.]\n\n`;
                     finalPrompt = contextHeader + prompt;
-                } else {
-                    console.warn(`Failed to fetch repo tree: ${treeRes.status}`);
                 }
             } catch (repoErr) {
                 console.error("Repo Context Error:", repoErr);
-                // Continue without context if fails
             }
         }
 
-        // Default to copilot-think for stability
         let apiPath = 'copilot-think';
         if (model === 'gpt-4o') console.log("User requested GPT-4o, falling back to copilot-think");
         if (model === 'deepseek-r1') console.log("User requested DeepSeek R1, falling back to copilot-think");
@@ -192,35 +222,28 @@ async function handleHistory(request, env, url) {
     }
 
     const pathParts = url.pathname.split('/');
-    const chatId = pathParts[3]; // /api/history/:id -> index 3
+    const chatId = pathParts[3];
 
     const MANIFEST_KEY = `users/${userId}/manifest.json`;
 
     try {
-        // --- GET: List or Retrieve ---
         if (request.method === 'GET') {
             if (chatId) {
-                // Get specific chat
                 const object = await env.VPSAI.get(`chats/${userId}/${chatId}.json`);
                 if (!object) return new Response('Chat not found', { status: 404 });
                 const data = await object.json();
                 return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
             } else {
-                // List chats (from manifest)
                 const object = await env.VPSAI.get(MANIFEST_KEY);
                 const list = object ? await object.json() : [];
                 return new Response(JSON.stringify(list), { headers: { 'Content-Type': 'application/json' } });
             }
         }
 
-        // --- POST: Save ---
         if (request.method === 'POST' && chatId) {
             const { messages, title } = await request.json();
-
-            // 1. Save Chat Content
             await env.VPSAI.put(`chats/${userId}/${chatId}.json`, JSON.stringify({ messages, title, updatedAt: Date.now() }));
 
-            // 2. Update Manifest
             const object = await env.VPSAI.get(MANIFEST_KEY);
             let list = object ? await object.json() : [];
 
@@ -232,9 +255,9 @@ async function handleHistory(request, env, url) {
             };
 
             if (existingIndex >= 0) {
-                list[existingIndex] = metadata; // Update existing
+                list[existingIndex] = metadata;
             } else {
-                list.unshift(metadata); // Add new to top
+                list.unshift(metadata);
             }
 
             await env.VPSAI.put(MANIFEST_KEY, JSON.stringify(list));
@@ -242,19 +265,14 @@ async function handleHistory(request, env, url) {
             return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
         }
 
-        // --- DELETE: Remove ---
         if (request.method === 'DELETE' && chatId) {
-            // 1. Delete Chat File
             await env.VPSAI.delete(`chats/${userId}/${chatId}.json`);
-
-            // 2. Update Manifest
             const object = await env.VPSAI.get(MANIFEST_KEY);
             if (object) {
                 let list = await object.json();
                 list = list.filter(c => c.id !== chatId);
                 await env.VPSAI.put(MANIFEST_KEY, JSON.stringify(list));
             }
-
             return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
         }
 
@@ -263,5 +281,36 @@ async function handleHistory(request, env, url) {
     } catch (err) {
         console.error('R2 Error:', err);
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    }
+}
+
+async function handleServeImage(request, env, url) {
+    try {
+        // Path format: /api/image/uploads/filename.png
+        // R2 Key: uploads/filename.png
+        // Extract key from path.
+        // url.pathname starts with /api/image/
+        const key = url.pathname.replace('/api/image/', '');
+
+        if (!key) {
+            return new Response('Image not specified', { status: 400 });
+        }
+
+        const object = await env.VPSAI.get(key);
+        if (!object) {
+            return new Response('Image Not Found', { status: 404 });
+        }
+
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set('etag', object.httpEtag);
+
+        return new Response(object.body, {
+            headers,
+        });
+
+    } catch (err) {
+        console.error("Serve Image Error:", err);
+        return new Response('Internal Server Error', { status: 500 });
     }
 }

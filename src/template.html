@@ -28,6 +28,18 @@
             --gradient-border: linear-gradient(135deg, #333, #00c6ff 150%);
         }
 
+        /* Animated Backgrounds */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-animated {
+            background-size: 400% 400% !important;
+            animation: gradientBG 15s ease infinite !important;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -540,6 +552,73 @@
             padding-bottom: max(15px, env(safe-area-inset-bottom));
         }
 
+        /* Image Upload */
+        .image-upload-btn {
+            background: transparent;
+            border: 1px solid var(--accent-gold-dim);
+            color: var(--accent-gold);
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .image-upload-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--accent-gold);
+        }
+
+        .image-preview {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid var(--accent-gold);
+            background: #000;
+            object-fit: cover;
+            z-index: 20;
+        }
+
+        .image-preview-container {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            z-index: 20;
+        }
+
+        .image-preview-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid var(--accent-gold);
+            object-fit: cover;
+            background: #000;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         input[type="text"] {
             flex: 1;
             background: #111;
@@ -684,11 +763,25 @@
         }
 
         /* Settings Modal Specifics */
+        .settings-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .settings-section-title {
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         .color-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 15px;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         .color-option {
@@ -716,6 +809,9 @@
             font-size: 0.7rem;
             margin-top: 5px;
             color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Preview specific override */
@@ -821,7 +917,18 @@
 
     <div class="typing-indicator" id="typing-indicator">Agent is thinking...</div>
 
+    <div class="image-preview-container" id="image-preview-container">
+        <img id="image-preview" class="image-preview-img">
+        <button class="remove-image-btn" onclick="clearImage()">×</button>
+    </div>
+
     <form class="input-area" id="chat-form">
+        <input type="file" id="image-input" accept="image/*" style="display: none;" onchange="handleImageSelect(this)">
+        <button type="button" class="image-upload-btn" onclick="document.getElementById('image-input').click()" aria-label="Upload Image">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+            </svg>
+        </button>
         <input type="text" id="user-input" placeholder="Type your command..." autocomplete="off" required>
         <button type="submit" id="send-btn" aria-label="Send">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -868,14 +975,25 @@
 
 <!-- Settings Modal -->
 <div class="modal" id="settings-modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
         <div class="modal-header">
-            <span class="modal-title">Theme Settings</span>
+            <span class="modal-title">Settings</span>
             <button class="close-modal-btn" onclick="closeModal('settings-modal')">&times;</button>
         </div>
-        <p style="color: #888; font-size: 0.9rem; text-align: center; margin-bottom: 10px;">Select a luxury theme:</p>
-        <div class="color-grid" id="theme-grid">
-            <!-- Injected via JS -->
+
+        <div class="settings-section">
+            <div class="settings-section-title">Accent Theme</div>
+            <div class="color-grid" id="theme-grid"></div>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-section-title">Chat Text Color</div>
+            <div class="color-grid" id="text-color-grid"></div>
+        </div>
+
+        <div class="settings-section" style="border: none;">
+            <div class="settings-section-title">Animated Background</div>
+            <div class="color-grid" id="bg-grid"></div>
         </div>
     </div>
 </div>
@@ -933,6 +1051,7 @@
     let chatHistory = [];
     let selectedRepo = null; // { name: 'owner/repo', default_branch: 'main' }
     let pendingFileContent = ''; // For save operation
+    let selectedImageBase64 = null; // For image upload
 
     // --- GitHub Login Logic ---
     const githubBtn = document.getElementById('github-btn');
@@ -1342,13 +1461,45 @@
         } catch (e) {}
     }
 
+    // --- Image Upload Logic ---
+    function handleImageSelect(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedImageBase64 = e.target.result;
+                document.getElementById('image-preview').src = selectedImageBase64;
+                document.getElementById('image-preview-container').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function clearImage() {
+        selectedImageBase64 = null;
+        document.getElementById('image-input').value = '';
+        document.getElementById('image-preview-container').style.display = 'none';
+    }
+
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const message = userInput.value.trim();
         if (!message) return;
 
         addMessageToUI(message, true);
-        currentMessages.push({ role: 'user', content: message });
+
+        // Show image in chat if present
+        if (selectedImageBase64) {
+            const imgMsg = `<img src="${selectedImageBase64}" style="max-width: 200px; border-radius: 8px; border: 1px solid var(--accent-gold);">`;
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message user-message';
+            msgDiv.innerHTML = imgMsg;
+            chatWindow.appendChild(msgDiv);
+        }
+
+        currentMessages.push({ role: 'user', content: message, image: selectedImageBase64 ? 'attached' : null });
+
+        const payloadImage = selectedImageBase64; // Capture before clearing
+        clearImage(); // Clear input immediately
 
         userInput.value = '';
         userInput.disabled = true;
@@ -1365,7 +1516,8 @@
                     prompt: message,
                     model: modelSelect.value,
                     selectedRepo: selectedRepo, // Pass repo context
-                    githubToken: token
+                    githubToken: token,
+                    image: payloadImage
                 })
             });
 
@@ -1453,6 +1605,8 @@
     function openSettingsModal() {
         document.getElementById('settings-modal').style.display = 'flex';
         renderThemeGrid();
+        renderTextColorGrid();
+        renderBgGrid();
     }
 
     function renderThemeGrid() {
@@ -1493,9 +1647,107 @@
         renderThemeGrid(); // Update active state
     }
 
+    // --- Text Colors ---
+    const textColors = {
+        default: { name: "Default (White)", val: "#e0e0e0" },
+        gold: { name: "Liquid Gold", val: "#d4af37" },
+        cyan: { name: "Neon Cyan", val: "#00ffff" },
+        lime: { name: "Cyber Lime", val: "#39ff14" },
+        rose: { name: "Rose Pink", val: "#ff007f" },
+        violet: { name: "Ultra Violet", val: "#7f00ff" },
+        ice: { name: "Ice Blue", val: "#a0e6ff" },
+        orange: { name: "Blaze Orange", val: "#ff5f00" }
+    };
+
+    function renderTextColorGrid() {
+        const grid = document.getElementById('text-color-grid');
+        grid.innerHTML = '';
+        const current = localStorage.getItem('agent007_text_color') || 'default';
+
+        Object.keys(textColors).forEach(key => {
+            const color = textColors[key];
+            const wrapper = document.createElement('div');
+            const circle = document.createElement('div');
+            circle.className = `color-option ${key === current ? 'active' : ''}`;
+            circle.style.background = color.val;
+            circle.onclick = () => applyTextColor(key);
+            const label = document.createElement('div');
+            label.className = 'color-label';
+            label.textContent = color.name;
+            wrapper.appendChild(circle);
+            wrapper.appendChild(label);
+            grid.appendChild(wrapper);
+        });
+    }
+
+    function applyTextColor(key) {
+        const color = textColors[key];
+        if (!color) return;
+        document.documentElement.style.setProperty('--text-color', color.val);
+        // Also update message text specifically if needed
+        const style = document.getElementById('dynamic-text-style') || document.createElement('style');
+        style.id = 'dynamic-text-style';
+        style.innerHTML = `.message { color: ${color.val} !important; }`;
+        if (!document.getElementById('dynamic-text-style')) document.head.appendChild(style);
+
+        localStorage.setItem('agent007_text_color', key);
+        renderTextColorGrid();
+    }
+
+    // --- Animated Backgrounds ---
+    const backgrounds = {
+        void: { name: "The Void (Default)", grad: "linear-gradient(135deg, #050505, #1a1a1a)" },
+        aurora: { name: "Aurora", grad: "linear-gradient(-45deg, #000000, #130f40, #303952, #000000)" },
+        sunset: { name: "Sunset Luxe", grad: "linear-gradient(-45deg, #2d0b00, #5e2c04, #2d0b00)" },
+        ocean: { name: "Deep Ocean", grad: "linear-gradient(-45deg, #000000, #001f3f, #003366, #000000)" },
+        royal: { name: "Royal Velvet", grad: "linear-gradient(-45deg, #1a0b2e, #3a1c71, #2e0b1a)" },
+        emerald: { name: "Emerald City", grad: "linear-gradient(-45deg, #001a0f, #002b1f, #001a0f)" },
+        crimson: { name: "Crimson Tide", grad: "linear-gradient(-45deg, #1a0000, #330000, #1a0000)" },
+        gold: { name: "Midas Touch", grad: "linear-gradient(-45deg, #1a1500, #332b00, #1a1500)" }
+    };
+
+    function renderBgGrid() {
+        const grid = document.getElementById('bg-grid');
+        grid.innerHTML = '';
+        const current = localStorage.getItem('agent007_bg') || 'void';
+
+        Object.keys(backgrounds).forEach(key => {
+            const bg = backgrounds[key];
+            const wrapper = document.createElement('div');
+            const circle = document.createElement('div');
+            circle.className = `color-option ${key === current ? 'active' : ''}`;
+            circle.style.background = bg.grad;
+            circle.onclick = () => applyBg(key);
+            const label = document.createElement('div');
+            label.className = 'color-label';
+            label.textContent = bg.name;
+            wrapper.appendChild(circle);
+            wrapper.appendChild(label);
+            grid.appendChild(wrapper);
+        });
+    }
+
+    function applyBg(key) {
+        const bg = backgrounds[key];
+        if (!bg) return;
+        document.body.style.background = bg.grad;
+        if (key !== 'void') {
+            document.body.classList.add('bg-animated');
+        } else {
+            document.body.classList.remove('bg-animated');
+            document.body.style.backgroundColor = 'var(--bg-color)'; // Reset
+        }
+        localStorage.setItem('agent007_bg', key);
+        renderBgGrid();
+    }
+
     // Load theme on startup
     const savedTheme = localStorage.getItem('agent007_theme');
     if (savedTheme) applyTheme(savedTheme);
+    const savedTextColor = localStorage.getItem('agent007_text_color');
+    if (savedTextColor) applyTextColor(savedTextColor);
+    const savedBg = localStorage.getItem('agent007_bg');
+    if (savedBg) applyBg(savedBg);
 
     // Close modals on outside click
     window.onclick = function(event) {
