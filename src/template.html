@@ -40,6 +40,12 @@
             animation: gradientBG 15s ease infinite !important;
         }
 
+        /* Fix: Let animated background show through */
+        body.bg-animated .container {
+            background: rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(5px);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -778,15 +784,23 @@
         }
 
         .color-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 15px;
             margin-top: 10px;
         }
 
+        .color-option-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 70px; /* Fixed width for item */
+        }
+
         .color-option {
-            width: 100%;
-            aspect-ratio: 1;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             cursor: pointer;
             border: 2px solid #333;
@@ -812,6 +826,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            width: 100%;
         }
 
         /* Preview specific override */
@@ -1617,6 +1632,7 @@
         Object.keys(themes).forEach(key => {
             const theme = themes[key];
             const wrapper = document.createElement('div');
+            wrapper.className = 'color-option-wrapper';
 
             const circle = document.createElement('div');
             circle.className = `color-option ${key === currentTheme ? 'active' : ''}`;
@@ -1667,6 +1683,8 @@
         Object.keys(textColors).forEach(key => {
             const color = textColors[key];
             const wrapper = document.createElement('div');
+            wrapper.className = 'color-option-wrapper';
+
             const circle = document.createElement('div');
             circle.className = `color-option ${key === current ? 'active' : ''}`;
             circle.style.background = color.val;
@@ -1714,6 +1732,8 @@
         Object.keys(backgrounds).forEach(key => {
             const bg = backgrounds[key];
             const wrapper = document.createElement('div');
+            wrapper.className = 'color-option-wrapper';
+
             const circle = document.createElement('div');
             circle.className = `color-option ${key === current ? 'active' : ''}`;
             circle.style.background = bg.grad;
