@@ -153,6 +153,16 @@ async function handleChatProxy(request, env) {
         // --- Context Injection ---
         let finalPrompt = prompt;
 
+        // Force AI to output filenames in a parseable format for auto-saving
+        const fileSystemInstruction = `
+[System: When generating code files, you MUST prefix every code block with its filename in this exact format:
+**File: path/to/filename.ext**
+\`\`\`language
+code content...
+\`\`\`
+Do not use any other format for filenames. This allows the system to auto-deploy the files to GitHub.]
+`;
+
         if (selectedRepo && githubToken) {
             try {
                 const branch = selectedRepo.default_branch || 'main';
@@ -174,11 +184,16 @@ async function handleChatProxy(request, env) {
                         .join('\n');
 
                     const contextHeader = `[System: You are analyzing the GitHub repository '${selectedRepo.full_name}'.\nFile Structure (partial):\n${fileList}\n\nUse this context to answer the user's request.]\n\n`;
-                    finalPrompt = contextHeader + prompt;
+                    finalPrompt = fileSystemInstruction + contextHeader + prompt;
+                } else {
+                    finalPrompt = fileSystemInstruction + prompt;
                 }
             } catch (repoErr) {
                 console.error("Repo Context Error:", repoErr);
+                finalPrompt = fileSystemInstruction + prompt;
             }
+        } else {
+            finalPrompt = fileSystemInstruction + prompt;
         }
 
         // --- Execute Gemini (if selected) ---
