@@ -1,0 +1,9 @@
+npm warn exec The following package was not found and will be installed: wrangler@4.63.0
+npm error process terminated
+npm error signal SIGTERM
+npm notice
+npm notice New minor version of npm available! 11.7.0 -> 11.9.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.9.0
+npm notice To update run: npm install -g npm@11.9.0
+npm notice
+npm error A complete log of this run can be found in: /home/jules/.npm/_logs/2026-02-08T09_05_25_160Z-debug-0.log

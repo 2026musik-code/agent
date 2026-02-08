@@ -124,6 +124,34 @@ async function handlePublicChat(request, env, url) {
         }
     }
 
+    // --- DELETE /messages (Delete message) ---
+    if (path === 'messages' && request.method === 'DELETE') {
+        try {
+            const { id, username } = await request.json();
+
+            if (!id || !username) return new Response('ID and Username required', { status: 400 });
+
+            const key = `public_chat/msgs/${id}.json`;
+            const msgObj = await env.VPSAI.get(key);
+
+            if (!msgObj) {
+                return new Response('Message not found', { status: 404 });
+            }
+
+            const msgData = await msgObj.json();
+
+            if (msgData.username !== username) {
+                return new Response('Unauthorized', { status: 403 });
+            }
+
+            await env.VPSAI.delete(key);
+
+            return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
+        } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        }
+    }
+
     // --- POST /heartbeat (Update online status) ---
     if (path === 'heartbeat' && request.method === 'POST') {
         try {
@@ -345,7 +373,7 @@ Do not use any other format for filenames. This allows the system to auto-deploy
             }
 
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
                 const parts = [{ text: finalPrompt }];
 
@@ -367,7 +395,10 @@ Do not use any other format for filenames. This allows the system to auto-deploy
 
                 const geminiRes = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': geminiKey
+                    },
                     body: JSON.stringify(payload)
                 });
 
