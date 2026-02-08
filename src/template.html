@@ -358,10 +358,39 @@
             background: #202c33;
             border-top: 1px solid #333;
             display: flex;
-            gap: 10px;
+            gap: 8px; /* Reduced gap for mobile */
             align-items: center;
             flex-shrink: 0;
             padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+
+        #room-input {
+            flex: 1;
+            min-width: 0; /* Allow flex shrink */
+            padding: 10px 12px;
+            border-radius: 20px; /* Pill shape like WhatsApp */
+            background: #2a3942;
+            border: none;
+            color: #e9edef;
+        }
+
+        #room-send-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%; /* Circle */
+            background: var(--accent-gold);
+            color: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0; /* Prevent squishing */
+            padding: 0;
+            margin-left: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        #room-send-btn svg {
+            margin-left: 2px; /* Visual center adjustment */
         }
 
         .room-msg {
@@ -1270,9 +1299,9 @@
             <button class="image-upload-btn" id="voice-record-btn" style="color:#ff4444" onclick="toggleVoiceRecord()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
             </button>
-            <input type="text" id="room-input" placeholder="Type a message..." autocomplete="off">
-            <button id="room-send-btn" onclick="sendPublicMessage()" class="image-upload-btn" style="background:var(--accent-gold);color:black;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <input type="text" id="room-input" placeholder="Message" autocomplete="off">
+            <button id="room-send-btn" onclick="sendPublicMessage()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
     </div>
