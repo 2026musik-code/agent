@@ -431,11 +431,16 @@
 
         .user-message {
             align-self: flex-end;
-            background-color: var(--user-msg-bg);
-            border: 1px solid var(--border-color);
+            background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+            border: 1px solid var(--accent-gold-dim);
             color: var(--accent-gold);
-            border-right: 3px solid var(--accent-gold);
-            font-family: 'Courier New', monospace; /* Keep user input "techy" */
+            border-right: 4px solid var(--accent-gold);
+            font-family: 'Inter', sans-serif; /* Cleaner, more premium font */
+            font-size: 1.05rem; /* Larger text */
+            padding: 20px 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            font-weight: 500;
+            letter-spacing: 0.5px;
         }
 
         .ai-message {
@@ -446,38 +451,50 @@
             width: 100%;
             max-width: 90%;
             border-radius: 12px;
-            line-height: 1.6;
-            letter-spacing: 0.02em;
+            line-height: 1.8; /* Better readability */
+            letter-spacing: 0.03em;
             text-align: left;
+            font-size: 1rem;
         }
 
         /* Premium Typography for AI */
-        .ai-message h1, .ai-message h2, .ai-message h3, .ai-message strong {
+        .ai-message h1, .ai-message h2, .ai-message h3 {
             background: var(--gradient-text);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 700;
+            margin-top: 1em;
             margin-bottom: 0.5em;
-            display: inline-block;
+            display: block; /* Fix inline-block wrapping issues */
+        }
+
+        .ai-message strong {
+            color: var(--accent-gold); /* Ensure bold text is gold, not gradient (more readable) */
+            font-weight: 700;
         }
 
         .ai-message ul, .ai-message ol {
-            margin: 10px 0 10px 20px;
+            margin: 15px 0 15px 25px;
             padding-left: 0;
         }
 
         .ai-message li {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             position: relative;
             padding-left: 5px;
         }
 
         .ai-message p {
-            margin-bottom: 12px;
+            margin-bottom: 1.5em; /* More space between paragraphs */
+            overflow-wrap: break-word; /* Ensure long words wrap */
         }
 
-        .ai-message p:last-child {
-            margin-bottom: 0;
+        .ai-message > *:first-child { margin-top: 0; }
+        .ai-message > *:last-child { margin-bottom: 0; }
+
+        /* Ensure code blocks don't mess up text spacing */
+        .ai-message pre {
+            margin: 20px 0;
         }
 
         .ai-message img {
