@@ -193,10 +193,22 @@ async function handleChatProxy(request, env) {
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
 
+                const parts = [{ text: finalPrompt }];
+
+                // Add image if present (Text-and-Image input)
+                if (image) {
+                    try {
+                        const base64Data = image.split(',')[1];
+                        const mimeMatch = image.match(/:(.*?);/);
+                        const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+                        parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
+                    } catch (e) {
+                        console.error("Failed to parse image for Gemini:", e);
+                    }
+                }
+
                 const payload = {
-                    contents: [{
-                        parts: [{ text: finalPrompt }]
-                    }]
+                    contents: [{ parts: parts }]
                 };
 
                 const geminiRes = await fetch(url, {
@@ -211,8 +223,24 @@ async function handleChatProxy(request, env) {
                 }
 
                 const geminiData = await geminiRes.json();
-                // Extract text from Gemini response structure
-                const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "No response text.";
+
+                // Extract text and images from Gemini response structure
+                let responseText = "";
+                const candidates = geminiData.candidates || [];
+
+                if (candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
+                    for (const part of candidates[0].content.parts) {
+                        if (part.text) {
+                            responseText += part.text;
+                        }
+                        if (part.inline_data) {
+                            // Convert received image back to Markdown display
+                            responseText += `\n\n![Generated Image](data:${part.inline_data.mime_type};base64,${part.inline_data.data})\n\n`;
+                        }
+                    }
+                } else {
+                    responseText = "No response content.";
+                }
 
                 return new Response(JSON.stringify({
                     status: true,
