@@ -271,6 +271,29 @@
             font-weight: bold;
         }
 
+        .settings-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--accent-gold-dim);
+            color: var(--accent-gold);
+            padding: 12px;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 5px;
+            transition: all 0.2s;
+            margin-top: 20px;
+            flex-shrink: 0;
+        }
+
+        .settings-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
         .history-list {
             flex: 1;
             overflow-y: auto;
@@ -660,6 +683,41 @@
             color: var(--accent-gold);
         }
 
+        /* Settings Modal Specifics */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .color-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #333;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: #fff;
+        }
+
+        .color-option.active {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .color-label {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 5px;
+            color: #888;
+        }
+
         /* Preview specific override */
         #preview-modal .modal-content {
             max-width: 95%;
@@ -733,6 +791,13 @@
 
         <button class="new-chat-btn" id="new-chat-btn">New Chat</button>
         <div id="history-list" class="history-list"></div>
+        <button class="settings-btn" onclick="openSettingsModal()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Settings
+        </button>
     </div>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
@@ -796,6 +861,20 @@
         <div class="modal-actions">
             <button class="btn-secondary" onclick="closeModal('login-modal')">Cancel</button>
             <button class="btn-primary" onclick="saveGitHubCredentials()">Authenticate</button>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settings-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">Theme Settings</span>
+            <button class="close-modal-btn" onclick="closeModal('settings-modal')">&times;</button>
+        </div>
+        <p style="color: #888; font-size: 0.9rem; text-align: center; margin-bottom: 10px;">Select a luxury theme:</p>
+        <div class="color-grid" id="theme-grid">
+            <!-- Injected via JS -->
         </div>
     </div>
 </div>
@@ -1309,6 +1388,113 @@
 
     checkGitHubLogin();
     loadHistoryList();
+
+    // --- Theme Logic ---
+    const themes = {
+        gold: {
+            name: "Classic Gold",
+            accent: "#d4af37",
+            dim: "#a68b2c",
+            gradientText: "linear-gradient(90deg, #d4af37, #f0c445)",
+            gradientBorder: "linear-gradient(135deg, #333, #d4af37 150%)"
+        },
+        platinum: {
+            name: "Platinum",
+            accent: "#e5e4e2",
+            dim: "#7f7f7f",
+            gradientText: "linear-gradient(90deg, #e5e4e2, #ffffff)",
+            gradientBorder: "linear-gradient(135deg, #333, #e5e4e2 150%)"
+        },
+        rose: {
+            name: "Rose Gold",
+            accent: "#e0bfb8",
+            dim: "#b76e79",
+            gradientText: "linear-gradient(90deg, #e0bfb8, #ffccd5)",
+            gradientBorder: "linear-gradient(135deg, #333, #e0bfb8 150%)"
+        },
+        emerald: {
+            name: "Emerald",
+            accent: "#50c878",
+            dim: "#2e8b57",
+            gradientText: "linear-gradient(90deg, #50c878, #00ff7f)",
+            gradientBorder: "linear-gradient(135deg, #333, #50c878 150%)"
+        },
+        sapphire: {
+            name: "Sapphire",
+            accent: "#4169e1",
+            dim: "#000080",
+            gradientText: "linear-gradient(90deg, #4169e1, #00bfff)",
+            gradientBorder: "linear-gradient(135deg, #333, #4169e1 150%)"
+        },
+        ruby: {
+            name: "Ruby",
+            accent: "#e0115f",
+            dim: "#8b0000",
+            gradientText: "linear-gradient(90deg, #e0115f, #ff0055)",
+            gradientBorder: "linear-gradient(135deg, #333, #e0115f 150%)"
+        },
+        amethyst: {
+            name: "Amethyst",
+            accent: "#9966cc",
+            dim: "#4b0082",
+            gradientText: "linear-gradient(90deg, #9966cc, #da70d6)",
+            gradientBorder: "linear-gradient(135deg, #333, #9966cc 150%)"
+        },
+        copper: {
+            name: "Copper",
+            accent: "#b87333",
+            dim: "#8b4513",
+            gradientText: "linear-gradient(90deg, #b87333, #cd7f32)",
+            gradientBorder: "linear-gradient(135deg, #333, #b87333 150%)"
+        }
+    };
+
+    function openSettingsModal() {
+        document.getElementById('settings-modal').style.display = 'flex';
+        renderThemeGrid();
+    }
+
+    function renderThemeGrid() {
+        const grid = document.getElementById('theme-grid');
+        grid.innerHTML = '';
+        const currentTheme = localStorage.getItem('agent007_theme') || 'gold';
+
+        Object.keys(themes).forEach(key => {
+            const theme = themes[key];
+            const wrapper = document.createElement('div');
+
+            const circle = document.createElement('div');
+            circle.className = `color-option ${key === currentTheme ? 'active' : ''}`;
+            circle.style.background = theme.accent;
+            circle.onclick = () => applyTheme(key);
+
+            const label = document.createElement('div');
+            label.className = 'color-label';
+            label.textContent = theme.name;
+
+            wrapper.appendChild(circle);
+            wrapper.appendChild(label);
+            grid.appendChild(wrapper);
+        });
+    }
+
+    function applyTheme(themeKey) {
+        const theme = themes[themeKey];
+        if (!theme) return;
+
+        const root = document.documentElement;
+        root.style.setProperty('--accent-gold', theme.accent);
+        root.style.setProperty('--accent-gold-dim', theme.dim);
+        root.style.setProperty('--gradient-text', theme.gradientText);
+        root.style.setProperty('--gradient-border', theme.gradientBorder);
+
+        localStorage.setItem('agent007_theme', themeKey);
+        renderThemeGrid(); // Update active state
+    }
+
+    // Load theme on startup
+    const savedTheme = localStorage.getItem('agent007_theme');
+    if (savedTheme) applyTheme(savedTheme);
 
     // Close modals on outside click
     window.onclick = function(event) {
