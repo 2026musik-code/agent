@@ -51,43 +51,6 @@ async function handleChatProxy(request, env) {
             });
         }
 
-        // --- Google Gemini (Direct API) ---
-        if (model.startsWith('gemini-')) {
-            if (!geminiKey) {
-                return new Response(JSON.stringify({
-                    status: false,
-                    result: { response: '⚠️ **Missing API Key**\n\nPlease enter your Gemini API Key in Settings.' }
-                }), { headers: { 'Content-Type': 'application/json' } });
-            }
-
-            try {
-                // Map frontend model names to API versions
-                // "gemini-2.0-flash-exp" -> "gemini-2.0-flash-exp"
-                // "gemini-1.5-pro" -> "gemini-1.5-pro-latest" or just "gemini-1.5-pro"
-                // "gemini-1.5-flash" -> "gemini-1.5-flash"
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
-
-                const payload = {
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }]
-                };
-
-                // Add System Instruction for Context (Repo) if available
-                if (selectedRepo && githubToken) {
-                     // We need to fetch context first (see below).
-                     // Since Gemini supports system instructions, let's use that structure if possible or prepend to prompt.
-                     // For v1beta, system_instruction is supported in newer models.
-                     // But strictly speaking, the context fetching logic is below. Let's reuse it.
-                }
-
-                // Wait, I should reuse the Context Injection logic below for ALL models.
-                // So I will move the Gemini block AFTER context injection.
-            } catch (e) {
-                // ...
-            }
-        }
 
         // --- GPT Nano (Edit Image) ---
         if (model === 'gptnano') {
