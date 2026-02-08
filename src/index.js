@@ -40,7 +40,7 @@ export default {
 
 async function handleChatProxy(request, env) {
     try {
-        const { prompt, model, selectedRepo, githubToken, image } = await request.json();
+        const { prompt, model, selectedRepo, githubToken, image, geminiKey } = await request.json();
         const requestUrl = new URL(request.url);
         const origin = requestUrl.origin;
 
@@ -49,6 +49,44 @@ async function handleChatProxy(request, env) {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
             });
+        }
+
+        // --- Google Gemini (Direct API) ---
+        if (model.startsWith('gemini-')) {
+            if (!geminiKey) {
+                return new Response(JSON.stringify({
+                    status: false,
+                    result: { response: '⚠️ **Missing API Key**\n\nPlease enter your Gemini API Key in Settings.' }
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
+
+            try {
+                // Map frontend model names to API versions
+                // "gemini-2.0-flash-exp" -> "gemini-2.0-flash-exp"
+                // "gemini-1.5-pro" -> "gemini-1.5-pro-latest" or just "gemini-1.5-pro"
+                // "gemini-1.5-flash" -> "gemini-1.5-flash"
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                };
+
+                // Add System Instruction for Context (Repo) if available
+                if (selectedRepo && githubToken) {
+                     // We need to fetch context first (see below).
+                     // Since Gemini supports system instructions, let's use that structure if possible or prepend to prompt.
+                     // For v1beta, system_instruction is supported in newer models.
+                     // But strictly speaking, the context fetching logic is below. Let's reuse it.
+                }
+
+                // Wait, I should reuse the Context Injection logic below for ALL models.
+                // So I will move the Gemini block AFTER context injection.
+            } catch (e) {
+                // ...
+            }
         }
 
         // --- GPT Nano (Edit Image) ---
@@ -180,6 +218,57 @@ async function handleChatProxy(request, env) {
             }
         }
 
+        // --- Execute Gemini (if selected) ---
+        if (model.startsWith('gemini-')) {
+             if (!geminiKey) {
+                return new Response(JSON.stringify({
+                    status: false,
+                    result: { response: '⚠️ **Missing API Key**\n\nPlease enter your Gemini API Key in Settings.' }
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: finalPrompt }]
+                    }]
+                };
+
+                const geminiRes = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!geminiRes.ok) {
+                    const errText = await geminiRes.text();
+                    throw new Error(`Gemini API Error (${geminiRes.status}): ${errText}`);
+                }
+
+                const geminiData = await geminiRes.json();
+                // Extract text from Gemini response structure
+                const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "No response text.";
+
+                return new Response(JSON.stringify({
+                    status: true,
+                    result: {
+                        model: model,
+                        response: responseText
+                    }
+                }), { headers: { 'Content-Type': 'application/json' } });
+
+            } catch (geminiErr) {
+                console.error("Gemini Error:", geminiErr);
+                return new Response(JSON.stringify({
+                    status: false,
+                    result: { response: `⚠️ **Gemini Error**\n\n${geminiErr.message}` }
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
+        }
+
+        // --- Execute Magma API (Default) ---
         let apiPath = 'copilot-think';
         if (model === 'gpt-4o') console.log("User requested GPT-4o, falling back to copilot-think");
         if (model === 'deepseek-r1') console.log("User requested DeepSeek R1, falling back to copilot-think");
