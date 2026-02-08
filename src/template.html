@@ -289,6 +289,119 @@
             font-weight: bold;
         }
 
+        .public-chat-btn {
+            width: 100%;
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.2), transparent);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 12px;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 5px;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .public-chat-btn:hover {
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+            text-shadow: 0 0 5px var(--accent-gold);
+        }
+
+        /* Public Chat Modal Styles */
+        #public-chat-modal .modal-content {
+            max-width: 800px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            background: #0f0f0f;
+        }
+
+        .chat-room-header {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111;
+        }
+
+        .online-users {
+            font-size: 0.8rem;
+            color: #00ffcc;
+        }
+
+        .chat-room-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: var(--bg-color);
+        }
+
+        .chat-room-input {
+            padding: 15px;
+            background: #111;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .room-msg {
+            padding: 10px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+            position: relative;
+        }
+
+        .room-msg.mine {
+            align-self: flex-end;
+            background: rgba(212, 175, 55, 0.15);
+            border: 1px solid var(--accent-gold-dim);
+            color: var(--accent-gold);
+        }
+
+        .room-msg.theirs {
+            align-self: flex-start;
+            background: #222;
+            border: 1px solid #444;
+            color: #ccc;
+        }
+
+        .room-msg-sender {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .room-msg-time {
+            font-size: 0.65rem;
+            opacity: 0.5;
+            position: absolute;
+            bottom: -18px;
+            right: 0;
+            white-space: nowrap;
+        }
+
+        .room-msg img {
+            max-width: 100%;
+            border-radius: 4px;
+            margin-top: 5px;
+            border: 1px solid #444;
+        }
+
         .settings-btn {
             width: 100%;
             background: transparent;
@@ -925,6 +1038,15 @@
         </div>
 
         <button class="new-chat-btn" id="new-chat-btn">New Chat</button>
+        <button class="public-chat-btn" onclick="openPublicChatLogin()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Public Room (Real-time)
+        </button>
         <div id="history-list" class="history-list"></div>
         <button class="settings-btn" onclick="openSettingsModal()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1084,6 +1206,54 @@
         <div class="modal-actions">
             <button class="btn-secondary" onclick="closeModal('save-modal')">Cancel</button>
             <button class="btn-primary" onclick="confirmSaveToGitHub()">Commit Change</button>
+        </div>
+    </div>
+</div>
+
+<!-- Public Chat Login Modal -->
+<div class="modal" id="public-chat-login-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">Enter Public Room</span>
+            <button class="close-modal-btn" onclick="closeModal('public-chat-login-modal')">&times;</button>
+        </div>
+        <div class="modal-field">
+            <label>Nickname</label>
+            <input type="text" id="chat-nickname" placeholder="e.g. Agent 008">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="enterPublicChat()">Join Room</button>
+        </div>
+    </div>
+</div>
+
+<!-- Public Chat Room Modal -->
+<div class="modal" id="public-chat-modal">
+    <div class="modal-content">
+        <div class="chat-room-header">
+            <span class="modal-title" style="display:flex;align-items:center;gap:10px;">
+                <span style="width:10px;height:10px;background:#00ffcc;border-radius:50%;box-shadow:0 0 5px #00ffcc;"></span>
+                Public Lounge
+            </span>
+            <div class="online-users" id="online-users-display">Online: 0</div>
+            <button class="close-modal-btn" onclick="closeModal('public-chat-modal')">&times;</button>
+        </div>
+        <div class="chat-room-messages" id="public-messages">
+            <!-- Messages injected here -->
+        </div>
+        <div class="chat-room-input">
+            <input type="file" id="room-image-input" accept="image/*" style="display:none" onchange="handleRoomImage(this)">
+            <button class="image-upload-btn" onclick="document.getElementById('room-image-input').click()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M20.4 14.5L16 10 4 20"/></svg>
+            </button>
+            <!-- Voice Record Button (Stub) -->
+            <button class="image-upload-btn" id="voice-record-btn" style="color:#ff4444" onclick="toggleVoiceRecord()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </button>
+            <input type="text" id="room-input" placeholder="Type a message..." autocomplete="off">
+            <button id="room-send-btn" onclick="sendPublicMessage()" class="image-upload-btn" style="background:var(--accent-gold);color:black;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
         </div>
     </div>
 </div>
@@ -1931,6 +2101,207 @@
             event.target.style.display = "none";
         }
     }
+
+    // --- Public Chat Logic ---
+    let publicChatInterval = null;
+    let currentUserNickname = localStorage.getItem('agent007_nickname') || '';
+    let lastMessageTimestamp = 0;
+    let roomImageBase64 = null;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    function openPublicChatLogin() {
+        if (currentUserNickname) {
+            enterPublicChat(); // Already logged in locally
+        } else {
+            document.getElementById('public-chat-login-modal').style.display = 'flex';
+        }
+        closeSidebar();
+    }
+
+    async function enterPublicChat() {
+        const nickInput = document.getElementById('chat-nickname');
+        const nickname = nickInput.value.trim() || currentUserNickname;
+
+        if (!nickname) {
+            alert("Nickname is required!");
+            return;
+        }
+
+        currentUserNickname = nickname;
+        localStorage.setItem('agent007_nickname', nickname);
+
+        closeModal('public-chat-login-modal');
+        document.getElementById('public-chat-modal').style.display = 'flex';
+
+        // Initial fetch
+        await fetchPublicMessages();
+        await updateOnlineStatus();
+
+        // Start polling
+        if (publicChatInterval) clearInterval(publicChatInterval);
+        publicChatInterval = setInterval(async () => {
+            if (document.getElementById('public-chat-modal').style.display === 'none') {
+                clearInterval(publicChatInterval);
+                return;
+            }
+            await fetchPublicMessages();
+            await updateOnlineStatus();
+        }, 3000);
+    }
+
+    async function fetchPublicMessages() {
+        try {
+            const res = await fetch('/api/public-chat/messages');
+            if (res.ok) {
+                const messages = await res.json();
+                renderPublicMessages(messages);
+            }
+        } catch (e) { console.error("Chat Fetch Error:", e); }
+    }
+
+    function renderPublicMessages(messages) {
+        const container = document.getElementById('public-messages');
+        const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 10;
+
+        // Simple diffing: only append new messages if possible, or clear and redraw if simple
+        // For robustness, we'll redraw but optimize later if needed.
+        // To prevent jitter, we can check if content changed.
+
+        const newHtml = messages.map(msg => {
+            const isMine = msg.username === currentUserNickname;
+            const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let content = `<div class="room-msg-sender">${msg.username}</div>`;
+            if (msg.text) content += `<div>${marked.parseInline(msg.text)}</div>`;
+            if (msg.image) content += `<img src="${msg.image}" onclick="window.open(this.src)">`;
+            if (msg.voice) content += `<audio controls src="${msg.voice}" style="margin-top:5px;max-width:200px;"></audio>`;
+
+            content += `<div class="room-msg-time">${time}</div>`;
+
+            return `<div class="room-msg ${isMine ? 'mine' : 'theirs'}">${content}</div>`;
+        }).join('');
+
+        if (container.innerHTML !== newHtml) {
+            container.innerHTML = newHtml;
+            if (isScrolledToBottom || messages.length === 0) { // Auto-scroll only if already at bottom or first load
+                 container.scrollTop = container.scrollHeight;
+            }
+        }
+    }
+
+    async function sendPublicMessage() {
+        const input = document.getElementById('room-input');
+        const text = input.value.trim();
+
+        if (!text && !roomImageBase64 && !audioChunks.length) return; // Allow sending just image/voice
+
+        // Handle Voice Blob to Base64
+        let voiceBase64 = null;
+        if (audioChunks.length > 0) {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            voiceBase64 = await new Promise(r => {
+                const reader = new FileReader();
+                reader.onloadend = () => r(reader.result);
+                reader.readAsDataURL(blob);
+            });
+            audioChunks = []; // Reset
+        }
+
+        const payload = {
+            username: currentUserNickname,
+            text: text,
+            image: roomImageBase64,
+            voice: voiceBase64
+        };
+
+        // Optimistic UI Update (optional)
+        input.value = '';
+        roomImageBase64 = null; // Clear image
+        // Reset voice UI if needed
+
+        try {
+            await fetch('/api/public-chat/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            await fetchPublicMessages(); // Refresh immediately
+        } catch (e) {
+            alert("Failed to send message.");
+        }
+    }
+
+    async function updateOnlineStatus() {
+        try {
+            // Heartbeat
+            await fetch('/api/public-chat/heartbeat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUserNickname })
+            });
+
+            // Get Users
+            const res = await fetch('/api/public-chat/users');
+            if (res.ok) {
+                const users = await res.json();
+                document.getElementById('online-users-display').textContent = `Online: ${users.length}`;
+            }
+        } catch (e) {}
+    }
+
+    function handleRoomImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                roomImageBase64 = e.target.result;
+                // Maybe show a tiny preview near input
+                document.getElementById('room-input').placeholder = "[Image Attached]";
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- Voice Recording Logic (Simple) ---
+    async function toggleVoiceRecord() {
+        const btn = document.getElementById('voice-record-btn');
+
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btn.style.color = 'lime'; // Recording indicator
+                btn.innerHTML = '<span style="animation:pulse 1s infinite">🛑</span>'; // Stop icon
+
+            } catch (e) {
+                alert("Microphone access denied or not supported.");
+            }
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            btn.style.color = '#ff4444';
+            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+
+            // Wait for data to be available then send immediately? Or wait for user to click send?
+            // For now, let's just stage it.
+            document.getElementById('room-input').placeholder = "[Voice Message Recorded]";
+        }
+    }
+
+    // Send on Enter
+    document.getElementById('room-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendPublicMessage();
+    });
+
 </script>
 
 </body>

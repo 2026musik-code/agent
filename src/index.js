@@ -32,11 +32,150 @@ export default {
         return handleServeImage(request, env, url);
     }
 
+    // --- API: Public Chat ---
+    if (url.pathname.startsWith('/api/public-chat/')) {
+        if (!env.VPSAI) {
+             return new Response(JSON.stringify({ error: 'Storage not configured' }), { status: 503 });
+        }
+        return handlePublicChat(request, env, url);
+    }
+
     return new Response('Not Found', { status: 404 });
   },
 };
 
 // --- Helper Functions ---
+
+async function handlePublicChat(request, env, url) {
+    const path = url.pathname.replace('/api/public-chat/', '');
+
+    // --- GET /messages (Fetch recent messages) ---
+    if (path === 'messages' && request.method === 'GET') {
+        try {
+            // List messages from R2. Key format: public_chat/msgs/{timestamp}_{random}.json
+            const listed = await env.VPSAI.list({ prefix: 'public_chat/msgs/', limit: 100 });
+
+            // Filter messages older than 24h (86400000 ms)
+            const now = Date.now();
+            const cutoff = now - 86400000;
+
+            let messages = [];
+            let deleteKeys = [];
+
+            for (const object of listed.objects) {
+                // Extract timestamp from key: public_chat/msgs/1715..._xyz.json
+                const filename = object.key.split('/').pop();
+                const timestamp = parseInt(filename.split('_')[0]);
+
+                if (timestamp < cutoff) {
+                    deleteKeys.push(object.key);
+                } else {
+                    // Fetch content for valid messages
+                    const msgObj = await env.VPSAI.get(object.key);
+                    if (msgObj) {
+                        const msgData = await msgObj.json();
+                        messages.push(msgData);
+                    }
+                }
+            }
+
+            // Cleanup old messages asynchronously (fire and forget)
+            if (deleteKeys.length > 0) {
+                 env.VPSAI.delete(deleteKeys).catch(console.error);
+            }
+
+            // Sort by time
+            messages.sort((a, b) => a.timestamp - b.timestamp);
+
+            return new Response(JSON.stringify(messages), { headers: { 'Content-Type': 'application/json' } });
+        } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        }
+    }
+
+    // --- POST /messages (Send message) ---
+    if (path === 'messages' && request.method === 'POST') {
+        try {
+            const { username, text, image, voice } = await request.json(); // voice is base64 string
+
+            if (!username) return new Response('Username required', { status: 400 });
+
+            const timestamp = Date.now();
+            const id = `${timestamp}_${Math.random().toString(36).substr(2, 5)}`;
+            const key = `public_chat/msgs/${id}.json`;
+
+            const messageData = {
+                id,
+                username,
+                text: text || '',
+                image: image || null, // Base64 or URL
+                voice: voice || null, // Base64
+                timestamp
+            };
+
+            await env.VPSAI.put(key, JSON.stringify(messageData));
+
+            // Update user status implicitly
+            await env.VPSAI.put(`public_chat/users/${username}.json`, JSON.stringify({ last_seen: timestamp }));
+
+            return new Response(JSON.stringify({ success: true, message: messageData }), { headers: { 'Content-Type': 'application/json' } });
+        } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        }
+    }
+
+    // --- POST /heartbeat (Update online status) ---
+    if (path === 'heartbeat' && request.method === 'POST') {
+        try {
+            const { username } = await request.json();
+            if (username) {
+                await env.VPSAI.put(`public_chat/users/${username}.json`, JSON.stringify({ last_seen: Date.now() }));
+            }
+            return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
+        } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        }
+    }
+
+    // --- GET /users (Get online users) ---
+    if (path === 'users' && request.method === 'GET') {
+        try {
+            const listed = await env.VPSAI.list({ prefix: 'public_chat/users/' });
+            const now = Date.now();
+            const activeThreshold = 5 * 60 * 1000; // 5 minutes
+
+            let onlineUsers = [];
+            let inactiveKeys = [];
+
+            for (const object of listed.objects) {
+                // Fetch user data to check timestamp
+                const userObj = await env.VPSAI.get(object.key);
+                if (userObj) {
+                    const userData = await userObj.json();
+                    if (now - userData.last_seen < activeThreshold) {
+                         const username = object.key.split('/').pop().replace('.json', '');
+                         onlineUsers.push(username);
+                    } else {
+                        // Mark for cleanup if very old (e.g. > 1 hour to keep list clean)
+                        if (now - userData.last_seen > 3600000) {
+                            inactiveKeys.push(object.key);
+                        }
+                    }
+                }
+            }
+
+            if (inactiveKeys.length > 0) {
+                env.VPSAI.delete(inactiveKeys).catch(console.error);
+            }
+
+            return new Response(JSON.stringify(onlineUsers), { headers: { 'Content-Type': 'application/json' } });
+        } catch (e) {
+             return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        }
+    }
+
+    return new Response('Method Not Allowed', { status: 405 });
+}
 
 async function handleChatProxy(request, env) {
     try {
