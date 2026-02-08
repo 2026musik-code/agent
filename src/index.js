@@ -47,6 +47,35 @@ async function handleChatProxy(request) {
             });
         }
 
+        // --- GPT Nano (Edit Image) ---
+        if (model === 'gptnano') {
+             try {
+                const targetUrl = new URL('https://magma-api.biz.id/ai/gptnano');
+                targetUrl.searchParams.set('prompt', prompt);
+
+                const apiResponse = await fetch(targetUrl.toString(), {
+                    headers: { 'User-Agent': 'Agent007-Worker' }
+                });
+
+                if (!apiResponse.ok) {
+                    throw new Error(`GPT Nano API responded with status ${apiResponse.status}`);
+                }
+
+                const data = await apiResponse.json();
+
+                return new Response(JSON.stringify(data), {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+            } catch (err) {
+                console.error("GPT Nano Error:", err);
+                return new Response(JSON.stringify({
+                    status: false,
+                    result: { response: `⚠️ **Edit Failed**\n\nError: ${err.message}` }
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
+        }
+
         // --- Nano Banana (Image Gen) ---
         if (model === 'nano-banana') {
             try {
