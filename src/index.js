@@ -53,31 +53,34 @@ async function handlePublicChat(request, env, url) {
     if (path === 'messages' && request.method === 'GET') {
         try {
             // List messages from R2. Key format: public_chat/msgs/{timestamp}_{random}.json
-            const listed = await env.VPSAI.list({ prefix: 'public_chat/msgs/', limit: 100 });
+            const listed = await env.VPSAI.list({ prefix: 'public_chat/msgs/', limit: 500 });
 
             // Filter messages older than 24h (86400000 ms)
             const now = Date.now();
             const cutoff = now - 86400000;
 
-            let messages = [];
-            let deleteKeys = [];
-
-            for (const object of listed.objects) {
+            const processMsg = async (object) => {
                 // Extract timestamp from key: public_chat/msgs/1715..._xyz.json
                 const filename = object.key.split('/').pop();
                 const timestamp = parseInt(filename.split('_')[0]);
 
                 if (timestamp < cutoff) {
-                    deleteKeys.push(object.key);
+                    return { action: 'delete', key: object.key };
                 } else {
                     // Fetch content for valid messages
                     const msgObj = await env.VPSAI.get(object.key);
                     if (msgObj) {
                         const msgData = await msgObj.json();
-                        messages.push(msgData);
+                        return { action: 'keep', data: msgData };
                     }
                 }
-            }
+                return null;
+            };
+
+            const results = await Promise.all(listed.objects.map(processMsg));
+
+            const messages = results.filter(r => r && r.action === 'keep').map(r => r.data);
+            const deleteKeys = results.filter(r => r && r.action === 'delete').map(r => r.key);
 
             // Cleanup old messages asynchronously (fire and forget)
             if (deleteKeys.length > 0) {

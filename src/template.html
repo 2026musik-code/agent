@@ -316,6 +316,20 @@
             text-shadow: 0 0 5px var(--accent-gold);
         }
 
+        .sidebar-notification-badge {
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            box-shadow: 0 0 5px #ff4444;
+        }
+
         /* Public Chat Modal Styles */
         #public-chat-modal .modal-content {
             max-width: 800px;
@@ -351,6 +365,33 @@
             background: #0b141a;
             background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); /* Subtle Pattern */
             background-blend-mode: soft-light;
+            position: relative; /* For scroll button positioning context */
+        }
+
+        .new-msg-toast {
+            position: absolute;
+            bottom: 80px; /* Above input bar */
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-gold);
+            color: #111;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            cursor: pointer;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: max-content;
+        }
+
+        @keyframes bounceIn {
+            from { transform: translateX(-50%) scale(0.5); opacity: 0; }
+            to { transform: translateX(-50%) scale(1); opacity: 1; }
         }
 
         .chat-room-input {
@@ -1095,6 +1136,7 @@
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
             Public Room (Real-time)
+            <div id="sidebar-badge" class="sidebar-notification-badge">0</div>
         </button>
         <div id="history-list" class="history-list"></div>
         <button class="settings-btn" onclick="openSettingsModal()">
@@ -1290,6 +1332,13 @@
         <div class="chat-room-messages" id="public-messages">
             <!-- Messages injected here -->
         </div>
+
+        <!-- Floating Notification -->
+        <div class="new-msg-toast" id="new-msg-toast" onclick="scrollToBottom()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+            New Message
+        </div>
+
         <div class="chat-room-input">
             <input type="file" id="room-image-input" accept="image/*" style="display:none" onchange="handleRoomImage(this)">
             <button class="image-upload-btn" onclick="document.getElementById('room-image-input').click()">
@@ -2155,10 +2204,20 @@
     let publicChatInterval = null;
     let currentUserNickname = localStorage.getItem('agent007_nickname') || '';
     let lastMessageTimestamp = 0;
+    let lastMessageCount = 0;
+    let unreadCount = 0;
     let roomImageBase64 = null;
     let isRecording = false;
     let mediaRecorder = null;
     let audioChunks = [];
+
+    // Poll even when closed to update badge
+    setInterval(async () => {
+         const modal = document.getElementById('public-chat-modal');
+         if (modal.style.display === 'none') {
+             await fetchPublicMessages(true); // background mode
+         }
+    }, 10000);
 
     function openPublicChatLogin() {
         if (currentUserNickname) {
@@ -2187,6 +2246,8 @@
         // Initial fetch
         await fetchPublicMessages();
         await updateOnlineStatus();
+        unreadCount = 0; // Reset unread when opening
+        updateBadge();
 
         // Start polling
         if (publicChatInterval) clearInterval(publicChatInterval);
@@ -2200,19 +2261,60 @@
         }, 3000);
     }
 
-    async function fetchPublicMessages() {
+    async function fetchPublicMessages(background = false) {
         try {
             const res = await fetch('/api/public-chat/messages');
             if (res.ok) {
                 const messages = await res.json();
-                renderPublicMessages(messages);
+                if (background) {
+                    if (messages.length > lastMessageCount) {
+                        const diff = messages.length - lastMessageCount;
+                        // Only increment if we actually have *new* messages (simple count check)
+                        if (lastMessageCount > 0) {
+                            unreadCount += diff;
+                            updateBadge();
+                        }
+                        lastMessageCount = messages.length;
+                    }
+                } else {
+                    renderPublicMessages(messages);
+                }
             }
         } catch (e) { console.error("Chat Fetch Error:", e); }
     }
 
+    function updateBadge() {
+        const badge = document.getElementById('sidebar-badge');
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function scrollToBottom() {
+        const container = document.getElementById('public-messages');
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        document.getElementById('new-msg-toast').style.display = 'none';
+    }
+
     function renderPublicMessages(messages) {
         const container = document.getElementById('public-messages');
-        const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
+        // Check if user is near bottom (allow 100px buffer)
+        const isAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100;
+
+        const previousCount = lastMessageCount;
+        lastMessageCount = messages.length;
+
+        // Check if new messages arrived
+        if (messages.length > previousCount) {
+             // If we are NOT at bottom, and it's not the initial load
+             if (!isAtBottom && previousCount > 0) {
+                 const toast = document.getElementById('new-msg-toast');
+                 toast.style.display = 'flex';
+             }
+        }
 
         const newHtml = messages.map(msg => {
             const isMine = msg.username === currentUserNickname;
@@ -2234,11 +2336,21 @@
 
         if (container.innerHTML !== newHtml) {
             container.innerHTML = newHtml;
-            if (isScrolledToBottom || messages.length === 0) {
+            // Only auto-scroll if user was already at bottom or it's the first load
+            if (isAtBottom || previousCount === 0) {
                  container.scrollTop = container.scrollHeight;
             }
         }
     }
+
+    // Hide toast when user scrolls to bottom manually
+    document.getElementById('public-messages').addEventListener('scroll', () => {
+        const container = document.getElementById('public-messages');
+        const isAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
+        if (isAtBottom) {
+            document.getElementById('new-msg-toast').style.display = 'none';
+        }
+    });
 
     window.deletePublicMessage = async function(id) {
         if (!confirm("Delete this message?")) return;
