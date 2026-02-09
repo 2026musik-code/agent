@@ -376,8 +376,8 @@ Do not use any other format for filenames. This allows the system to auto-deploy
             }
 
             try {
-                // Default logic if not provided by user context (which it isn't yet)
-                const logic = "You are a helpful and logical AI assistant.";
+                // Default logic as requested by user
+                const logic = "kamu adalah AI yang dikembangkan oleh Feri";
 
                 const targetUrl = new URL('https://api.ferdev.my.id/ai/gptlogic');
                 targetUrl.searchParams.set('prompt', finalPrompt);
