@@ -353,6 +353,15 @@
         .online-users {
             font-size: 0.8rem;
             color: #00ffcc;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .online-users:hover {
+            background: rgba(0, 255, 204, 0.1);
+            text-decoration: underline;
         }
 
         .chat-room-messages {
@@ -1306,6 +1315,19 @@
     </div>
 </div>
 
+<!-- Online Users Modal -->
+<div class="modal" id="online-users-modal">
+    <div class="modal-content" style="max-height: 400px;">
+        <div class="modal-header">
+            <span class="modal-title">Active Agents</span>
+            <button class="close-modal-btn" onclick="closeModal('online-users-modal')">&times;</button>
+        </div>
+        <div class="repo-list" id="online-users-list">
+            <!-- Users injected here -->
+        </div>
+    </div>
+</div>
+
 <!-- Public Chat Login Modal -->
 <div class="modal" id="public-chat-login-modal">
     <div class="modal-content">
@@ -1331,7 +1353,7 @@
                 <span style="width:10px;height:10px;background:#00ffcc;border-radius:50%;box-shadow:0 0 5px #00ffcc;"></span>
                 Public Lounge
             </span>
-            <div class="online-users" id="online-users-display">Online: 0</div>
+            <div class="online-users" id="online-users-display" onclick="openOnlineUsersModal()">Online: 0</div>
             <button class="close-modal-btn" onclick="closeModal('public-chat-modal')">&times;</button>
         </div>
         <div class="chat-room-messages" id="public-messages">
@@ -1376,6 +1398,7 @@
     let selectedRepo = null; // { name: 'owner/repo', default_branch: 'main' }
     let pendingFileContent = ''; // For save operation
     let selectedImageBase64 = null; // For image upload
+    let currentOnlineUsers = []; // List of online users
 
     // --- Helper Functions ---
     function safeBtoa(str) {
@@ -2448,10 +2471,48 @@
             // Get Users
             const res = await fetch('/api/public-chat/users');
             if (res.ok) {
-                const users = await res.json();
-                document.getElementById('online-users-display').textContent = `Online: ${users.length}`;
+                currentOnlineUsers = await res.json();
+                document.getElementById('online-users-display').textContent = `Online: ${currentOnlineUsers.length}`;
             }
         } catch (e) {}
+    }
+
+    function openOnlineUsersModal() {
+        const listEl = document.getElementById('online-users-list');
+        listEl.innerHTML = '';
+
+        if (currentOnlineUsers.length === 0) {
+            listEl.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">No active agents found.</div>';
+        } else {
+            currentOnlineUsers.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'repo-item'; // Reuse existing style
+                item.style.cursor = 'default'; // Not clickable
+
+                // Add online indicator
+                const dot = document.createElement('span');
+                dot.style.display = 'inline-block';
+                dot.style.width = '8px';
+                dot.style.height = '8px';
+                dot.style.borderRadius = '50%';
+                dot.style.backgroundColor = '#00ffcc';
+                dot.style.marginRight = '10px';
+                dot.style.boxShadow = '0 0 5px #00ffcc';
+
+                const name = document.createElement('span');
+                name.textContent = user;
+                if (user === currentUserNickname) {
+                    name.textContent += ' (You)';
+                    name.style.fontWeight = 'bold';
+                    name.style.color = 'var(--accent-gold)';
+                }
+
+                item.appendChild(dot);
+                item.appendChild(name);
+                listEl.appendChild(item);
+            });
+        }
+        document.getElementById('online-users-modal').style.display = 'flex';
     }
 
     function handleRoomImage(input) {
