@@ -210,7 +210,7 @@ async function handlePublicChat(request, env, url) {
 
 async function handleChatProxy(request, env) {
     try {
-        const { prompt, model, selectedRepo, githubToken, image, geminiKey } = await request.json();
+        const { prompt, model, selectedRepo, githubToken, image, geminiKey, gptLogicKey } = await request.json();
         const requestUrl = new URL(request.url);
         const origin = requestUrl.origin;
 
@@ -364,6 +364,56 @@ Do not use any other format for filenames. This allows the system to auto-deploy
             }
         } else {
             finalPrompt = fileSystemInstruction + prompt;
+        }
+
+        // --- ChatGPT Logic (Ferdev API) ---
+        if (model === 'gpt-logic') {
+            if (!gptLogicKey) {
+                return new Response(JSON.stringify({
+                    status: false,
+                    result: { response: '⚠️ **Missing API Key**\n\nPlease enter your ChatGPT Logic API Key in Settings.' }
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
+
+            try {
+                // Default logic if not provided by user context (which it isn't yet)
+                const logic = "You are a helpful and logical AI assistant.";
+
+                const targetUrl = new URL('https://api.ferdev.my.id/ai/gptlogic');
+                targetUrl.searchParams.set('prompt', finalPrompt);
+                targetUrl.searchParams.set('logic', logic);
+                targetUrl.searchParams.set('apikey', gptLogicKey);
+
+                const apiResponse = await fetch(targetUrl.toString(), {
+                    headers: { 'User-Agent': 'Agent007-Worker' }
+                });
+
+                if (!apiResponse.ok) {
+                    throw new Error(`API responded with status ${apiResponse.status}`);
+                }
+
+                const data = await apiResponse.json();
+
+                // Response format: { success: true, status: 200, author: "Feri", message: "..." }
+                if (data.message) {
+                    return new Response(JSON.stringify({
+                        status: true,
+                        result: {
+                            model: model,
+                            response: data.message
+                        }
+                    }), { headers: { 'Content-Type': 'application/json' } });
+                } else {
+                     throw new Error('Invalid response structure from ChatGPT Logic API');
+                }
+
+            } catch (err) {
+                console.error("ChatGPT Logic Error:", err);
+                return new Response(JSON.stringify({
+                    status: false,
+                    result: { response: `⚠️ **ChatGPT Logic Error**\n\n${err.message}` }
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
         }
 
         // --- Execute Gemini (if selected) ---

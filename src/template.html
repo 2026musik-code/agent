@@ -1109,6 +1109,7 @@
                 <option value="gemini-3.0-pro">Gemini 3.0 Pro</option>
                 <option value="gemini-2.5-flash-image">Nano Banana (Gemini 2.5 Image)</option>
                 <option value="gemini-3-pro-image-preview">Nano Banana Pro (Gemini 3 Pro Image)</option>
+                <option value="gpt-logic">ChatGPT Logic</option>
             </select>
         </div>
     </header>
@@ -1238,7 +1239,11 @@
                 <label>Gemini API Key</label>
                 <input type="password" id="gemini-api-key" placeholder="Enter API Key from aistudio.google.com">
             </div>
-            <button class="btn-primary" onclick="saveGeminiKey()">Save API Key</button>
+            <div class="modal-field">
+                <label>ChatGPT Logic API Key</label>
+                <input type="password" id="gpt-logic-key" placeholder="Enter Key from api.ferdev.my.id">
+            </div>
+            <button class="btn-primary" onclick="saveApiKeys()">Save API Keys</button>
         </div>
 
         <div class="settings-section">
@@ -1361,8 +1366,9 @@
     const userId = localStorage.getItem('agent007_user_id') || `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem('agent007_user_id', userId);
 
-    // Initialize API Key from storage
+    // Initialize API Keys from storage
     document.getElementById('gemini-api-key').value = localStorage.getItem('gemini_api_key') || '';
+    document.getElementById('gpt-logic-key').value = localStorage.getItem('gpt_logic_key') || '';
 
     let currentChatId = null;
     let currentMessages = [];
@@ -1931,6 +1937,7 @@
 
         const token = localStorage.getItem('gh_token');
         const geminiKey = localStorage.getItem('gemini_api_key');
+        const gptLogicKey = localStorage.getItem('gpt_logic_key');
 
         try {
             const response = await fetch('/api/chat', {
@@ -1942,6 +1949,7 @@
                     selectedRepo: selectedRepo, // Pass repo context
                     githubToken: token,
                     geminiKey: geminiKey, // Pass Gemini Key
+                    gptLogicKey: gptLogicKey, // Pass ChatGPT Logic Key
                     image: payloadImage
                 })
             });
@@ -2037,15 +2045,29 @@
         renderBgGrid();
     }
 
-    function saveGeminiKey() {
-        const key = document.getElementById('gemini-api-key').value.trim();
-        if (key) {
-            localStorage.setItem('gemini_api_key', key);
-            alert("Gemini API Key saved!");
+    function saveApiKeys() {
+        const geminiKey = document.getElementById('gemini-api-key').value.trim();
+        const gptLogicKey = document.getElementById('gpt-logic-key').value.trim();
+
+        let msg = [];
+
+        if (geminiKey) {
+            localStorage.setItem('gemini_api_key', geminiKey);
+            msg.push("Gemini Key saved");
         } else {
             localStorage.removeItem('gemini_api_key');
-            alert("Gemini API Key removed.");
+            msg.push("Gemini Key removed");
         }
+
+        if (gptLogicKey) {
+            localStorage.setItem('gpt_logic_key', gptLogicKey);
+            msg.push("ChatGPT Logic Key saved");
+        } else {
+            localStorage.removeItem('gpt_logic_key');
+            msg.push("ChatGPT Logic Key removed");
+        }
+
+        alert(msg.join("\n"));
     }
 
     function renderThemeGrid() {
